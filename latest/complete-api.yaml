@@ -4,7 +4,7 @@ info:
   description: "API definitions for Coding Data\nThe Kafka topic exposes the FinalCodingData-Event, which is forwarded from the MQTT-Broker to kafka   \nThe MQTT topics define the interface between the coding system (Mail Match System incl. MCS) and SDDM\n"
   contact:
     name: gfellerle
-  version: 4.0.0-feature-primevision.8
+  version: 4.0.0-feature-primevision.9
 host: 'server:8080'
 basePath: 'Kafka, MQTT'
 paths:
@@ -595,7 +595,7 @@ definitions:
       organizationName:
         type: string
         description: 'Name of an organization (AMPplus: Name der Firma)'
-        maxLength: 35
+        maxLength: 200
       organizationNameAddOn1:
         type: string
         description: 'Addon of an organization name'
