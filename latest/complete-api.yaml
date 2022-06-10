@@ -4,7 +4,7 @@ info:
   description: "API definitions for Coding Data\nThe Kafka topic exposes the FinalCodingData-Event, which is forwarded from the MQTT-Broker to kafka   \nThe MQTT topics define the interface between the coding system (Mail Match System incl. MCS) and SDDM\n"
   contact:
     name: gfellerle
-  version: 4.0.0-feature-primevision.7
+  version: 4.0.0-feature-primevision.8
 host: 'server:8080'
 basePath: 'Kafka, MQTT'
 paths:
@@ -126,8 +126,7 @@ definitions:
         type: array
         items:
           type: string
-        description: 'Address lines (including printed address lines)'
-        maxLength: 80
+        description: 'Address lines (raw, unvalidated address data submitted by the customer)'
       sourceSystem:
         $ref: '#/definitions/SourceSystem'
         description: "Source of the address\nPossible sources in this context are:\nPREANNOUNCEMENT\nOCR_ADDRESS\nVCS_INTERNAL_ADDRESS\nVCS_EXTERNAL_ADDRESS\nOCR_RETRY_ADDRESS\nMANUAL_CODING_REJECT\nMANUAL_CODING_BULK\nMANUAL_CODING_BULK_AUTOMATIC"
@@ -216,6 +215,7 @@ definitions:
     type: string
     enum:
       - NONE
+      - DOMICILE
       - PICK_POST
       - MY_POST_24
       - PO_BOX
@@ -223,7 +223,7 @@ definitions:
       - COMPANY_POSTCODE
       - INTERNATIONAL_MAILPIECE
       - MILITARY
-    description: "NONE = no service\nPICK_POST = Pickpost\nMY_POST_24 = myPost24\nPO_BOX = Post Office Box (Postfach)\nPOSTE_RESTANTE = Retain at swiss post (Postlagernd)\nCOMPANY_POSTCODE = Company Postcode indicates (FirmenPLZ)\nINTERNATIONAL_PARCEL = International address (Import / Export)\nMILITARY = Military address"
+    description: "NONE = no service\nDOMICILE = Domiziladresse\nPICK_POST = Pickpost\nMY_POST_24 = myPost24\nPO_BOX = Post Office Box (Postfach)\nPOSTE_RESTANTE = Retain at swiss post (Postlagernd)\nCOMPANY_POSTCODE = Company Postcode indicates (FirmenPLZ)\nINTERNATIONAL_PARCEL = International address (Import / Export)\nMILITARY = Military address"
   DeliveryPoint:
     type: object
     properties:
@@ -513,10 +513,10 @@ definitions:
         type: string
         description: "Additional information related to a city\nmultiple purposes, see examples:\n56, 57 = Zoll, Import/Export\n60 = Briefzustellung\n61 = Postfach\n70 = Paketzustellung\n72 = Expresszustellung\n74 = Postautodienst\n75 = Kaserne"
         maxLength: 2
-      countryName:
+      countryCode:
         type: string
-        description: 'Name of the country'
-        maxLength: 80
+        description: 'ISO-Code of the country (2-digit)'
+        maxLength: 2
     additionalProperties: false
     description: 'Information related to the locality of an address'
   MasterDataKeys:
@@ -530,22 +530,25 @@ definitions:
         description: 'Identifies an address where the recipient lives (can be different from the physical address on the parcel, e.g. if the recipient has registered po-boxes or forwardings)'
       personAddressKey:
         $ref: '#/definitions/KeyWithConfidence'
-        description: 'Identifies a person at a domiclie address (unique)'
+        description: 'Identifies a person at a domiclie address (AMP-Key)'
       streetKey:
         $ref: '#/definitions/KeyWithConfidence'
-        description: 'Identifies the street physically located on the mailpiece'
+        description: 'Identifies the street physically located on the mailpiece (street key in AMPplus)'
       postCodeKey:
         $ref: '#/definitions/KeyWithConfidence'
-        description: 'Identifies the postcode physically located on the mailpiece'
+        description: 'Identifies the postcode physically located on the mailpiece (Ordnungsnummer Post (ONRP), Fremdschlüssel zu ASDP)'
       countryKey:
         $ref: '#/definitions/KeyWithConfidence'
-        description: 'Identifies the country physically located on the mailpiece'
+        description: 'Identifies the country physically located on the mailpiece (ID in the country-table in MDS)'
       mailBoxKey:
         $ref: '#/definitions/KeyWithConfidence'
-        description: 'Identifies the mailbox physically located on the mailpiece'
+        description: 'Identifies the mailbox physically located on the mailpiece (HBK ID)'
       communityKey:
         $ref: '#/definitions/KeyWithConfidence'
-        description: 'Identifies the community physically located on the mailpiece'
+        description: 'Identifies the community physically located on the mailpiece (BFS-Nr Gemeinde, Fremdschlüssel zu ASDP)'
+      militaryKey:
+        $ref: '#/definitions/KeyWithConfidence'
+        description: 'MLZ physically located on the mailpiece (read by the coding system)'
     additionalProperties: false
     description: 'Resolved address keys'
   PersonState:
