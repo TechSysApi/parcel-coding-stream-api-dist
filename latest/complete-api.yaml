@@ -4,7 +4,7 @@ info:
   description: "API definitions for Coding Data\nThe Kafka topic exposes the FinalCodingData-Event, which is forwarded from the MQTT-Broker to kafka   \nThe MQTT topics define the interface between the coding system (Mail Match System incl. MCS) and SDDM\n"
   contact:
     name: gfellerle
-  version: 5.0.0-feature-PZS-6787-vam-mapping-rucksendegrund-18-uberprufen.4
+  version: 4.1.0-feature-PZS-6787-vam-mapping-rucksendegrund-18-uberprufen.5
 host: 'server:8080'
 basePath: 'Kafka, MQTT'
 paths:
@@ -678,11 +678,11 @@ definitions:
       - SUMMONS
       - REMARK
       - INVALID_IDENTITY
-      - OVERSEA_MISSING_DOCUMENTS_DEPRECATED
+      - MAILBOX_AND_OR_BELL_NOT_LABELLED
       - CUSTOMS_CLEARANCE
       - GENERAL_CARGO_ILLEGAL_ADDRESS
       - OVERSEA_MISSING_DOCUMENTS
-    description: "Reason why parcel is returned\nUNCLAIMED = 0 = Nicht abgeholt\nRELOCATED = 1 = Weggezogen, Nachsendefrist abgelaufen\nREFUSED = 2 = Annahme verweigert\nRECIPIENT_UNKNOWN = 3 = Unbekannt (Empfänger nicht ermittelbar)\nDECEASED = 4 = Gestorben\nCOMPANY_DELETED = 5 = Firma erloschen\nRECIPIENT_RETURNED = 6 = Retour gem. Anweisung Absender/Empf.\nDAMAGE = 7 = Beschädigung\nPOSTRESTANTE = 8 = Postlagernd\nMILITARY = 9 = im Militär\nOVERSEA = 10 = im Ausland\nOUTSIDE_CIRCLE = 11 = ausserhalb Betreibungskreis\nBOX_NO_LONGER_EMPTIED = 12 = HBK/PF wird nicht mehr geleert\nRETURN_BY_RECEIVER = 13 = Rücksendung durch Empfänger\nRETAIN = 14 = Auftrag Post zurückbehalten\nSUMMONS = 15 = Vorladung BU\nREMARK = 16 = Vermerk auf Sendung beachten\nINVALID_IDENTITY = 17 = Ungültiges/falsches Ausweisdokument\nOVERSEA_MISSING_DOCUMENTS_DEPRECATED = 18 = Exportpaket ohne gültige Frachtpapiere (deprecated, to be removed)\nCUSTOMS_CLEARANCE = 19 = Neu- oder Korrekturverzollung\nGENERAL_CARGO_ILLEGAL_ADDRESS //General cargo (Stückgut) cannot be delivered to the designated address (i.e. a PO box)\nOVERSEA_MISSING_DOCUMENTS = 21 = Exportpaket ohne gültige Frachtpapiere"
+    description: "Reason why parcel is returned\nUNCLAIMED = 0 = Nicht abgeholt\nRELOCATED = 1 = Weggezogen, Nachsendefrist abgelaufen\nREFUSED = 2 = Annahme verweigert\nRECIPIENT_UNKNOWN = 3 = Unbekannt (Empfänger nicht ermittelbar)\nDECEASED = 4 = Gestorben\nCOMPANY_DELETED = 5 = Firma erloschen\nRECIPIENT_RETURNED = 6 = Retour gem. Anweisung Absender/Empf.\nDAMAGE = 7 = Beschädigung\nPOSTRESTANTE = 8 = Postlagernd\nMILITARY = 9 = im Militär\nOVERSEA = 10 = im Ausland\nOUTSIDE_CIRCLE = 11 = ausserhalb Betreibungskreis\nBOX_NO_LONGER_EMPTIED = 12 = HBK/PF wird nicht mehr geleert\nRETURN_BY_RECEIVER = 13 = Rücksendung durch Empfänger\nRETAIN = 14 = Auftrag Post zurückbehalten\nSUMMONS = 15 = Vorladung BU\nREMARK = 16 = Vermerk auf Sendung beachten\nINVALID_IDENTITY = 17 = Ungültiges/falsches Ausweisdokument\nMAILBOX_AND_OR_BELL_NOT_LABELLED = 18 = Briefkasten oder Klingel nicht angeschrieben\nCUSTOMS_CLEARANCE = 19 = Neu- oder Korrekturverzollung\nGENERAL_CARGO_ILLEGAL_ADDRESS //General cargo (Stückgut) cannot be delivered to the designated address (i.e. a PO box)\nOVERSEA_MISSING_DOCUMENTS = 21 = Exportpaket ohne gültige Frachtpapiere"
   ServiceAddress:
     type: object
     properties:
