@@ -4,7 +4,7 @@ info:
   description: "API definitions for Coding Data\nThe Kafka topic exposes the FinalCodingData-Event, which is forwarded from the MQTT-Broker to kafka   \nThe MQTT topics define the interface between the coding system (Mail Match System incl. MCS) and SDDM\n"
   contact:
     name: gfellerle
-  version: 4.1.0
+  version: 4.2.0-feature-serviceInformation.1
 host: 'server:8080'
 basePath: 'Kafka, MQTT'
 paths:
@@ -99,6 +99,15 @@ paths:
         default:
           schema: {$ref: '#/definitions/SubmitActionEvent'}
 definitions:
+  AddressType:
+    type: string
+    enum:
+      - FORWARD_TO_PERSON
+      - FORWARD_TO_POBOX
+      - FORWARD_TO_POST_OFFICE
+      - FORWARD_TO_PICK_POST
+      - FORWARD_TO_MY_POST_24
+    description: "FORWARD_TO_PERSON = forward to domicile\nFORWARD_TO_POBOX = forward to pobox\nFORWARD_TO_POST_OFFICE = forward to postoffice\nFORWARD_TO_PICK_POST = forward to pickpost\nFORWARD_TO_MY_POST_24 = forward to mypost24"
   Int:
     type: integer
     description: '<a href="https://swagger.io/docs/specification/data-models/data-types/#numbers">Number @asType integer</a>'
@@ -144,13 +153,6 @@ definitions:
       - sourceSystem
     additionalProperties: false
     description: 'Address captured by an enrichment device or delivered by a preannouncement system'
-  ChargingType:
-    type: string
-    enum:
-      - FREE
-      - CHARGEABLE
-      - CHARGEABLE_BILL
-      - PAID_BY_SENDER
   CodingDepth:
     type: string
     enum:
@@ -204,6 +206,26 @@ definitions:
       - sourceSystem
     additionalProperties: false
     description: 'Information captured by the coding systems during coding'
+  Day:
+    type: string
+    enum:
+      - MONDAY
+      - TUESDAY
+      - WEDNESDAY
+      - THURSDAY
+      - FRIDAY
+      - SATURDAY
+  DeliveryDay:
+    type: object
+    properties:
+      dayOfTheWeek:
+        $ref: '#/definitions/Day'
+        description: 'Day of the week when the mailpiece should be delivered. Only available in case of serviceType = DELIVERY_DAY'
+      timeWindow:
+        $ref: '#/definitions/TimeWindow'
+        description: 'Time window when the mailpiece should be delivered. Only available in case of serviceType = DELIVERY_DAY'
+    additionalProperties: false
+    description: 'Information about the desired delivery day of the customer'
   DeliveryPointState:
     type: string
     enum:
@@ -519,6 +541,14 @@ definitions:
         maxLength: 2
     additionalProperties: false
     description: 'Information related to the locality of an address'
+  ManualForwardingType:
+    type: string
+    enum:
+      - FORWARDING
+      - RETURN_SHIPMENT
+      - MISCARRIAGE
+      - AFTER_TREATMENT
+    description: "FORWARDING = 1 = NachsendungNSP Wenn in einer späteren Phase zu einer RS-Adresse die NS-Abklärung durchgeführt wird und daraus eine NS würde, wird hier NS angegeben\nRETURN_SHIPMENT = 2 = RuecksendungNSP Wenn aus der NS eine RS wurde, wird hier RS angegeben. Bsp. PPR (PostPac Promo): PPR werden nie nachgesendet. Infos zu DL sind für Nachforschungszwecke trotzdem ausgefüllt\nMISCARRIAGE = 3 = FehlleitungNSP\nAFTER_TREATMENT = 4 = Zur Nachbehandlung Informationen zur RS/NS (falls vorhanden) werden ausgefüllt. Der Verarbeitungsstatus wird auf OK gesetzt"
   MasterDataKeys:
     type: object
     properties:
@@ -551,6 +581,16 @@ definitions:
         description: 'MLZ physically located on the mailpiece (read by the coding system)'
     additionalProperties: false
     description: 'Resolved address keys'
+  PaymentMethod:
+    type: string
+    enum:
+      - UNKNOWN
+      - AUTOMATIC
+      - TSP
+      - PAID_BY_SENDER
+      - TAX_FREE
+      - BY_INVOICE
+    description: "AUTOMATIC = the fee is invoiced automatically (Abrechnung via Pve)\nPAID_BY_SENDER = the fee is paid by the sender\nTSP = ? wird aufgedruckt und bei Empfang bezahlt?\nTAX_FREE = the service is tax free\nBY_INVOICE = the fee is paid by invoice"
   PersonState:
     type: string
     enum:
@@ -652,11 +692,6 @@ definitions:
       - VCS_REJECT
       - OCR_REJECT
     description: "VCS_REJECT   Rejected by a VCS coder\nOCR_REJECT   Rejected by OCR"
-  RetainActionType:
-    type: string
-    enum:
-      - DELIVERY
-      - PICKUP
   ReturnReasonType:
     type: string
     enum:
@@ -686,91 +721,150 @@ definitions:
   ServiceAddress:
     type: object
     properties:
+      type:
+        $ref: '#/definitions/AddressType'
+        description: 'Type of Address'
+      company:
+        type: string
+        description: 'Company name of the addressee'
+      salutation:
+        type: string
+        description: 'Salutation of the addressee'
+      firstName:
+        type: string
+        description: 'Firstname of the addressee'
+      lastName:
+        type: string
+        description: 'Lastname of the addressee'
+      additionalAddressLine:
+        type: string
+        description: 'Additional address line of the addressee'
+      customerNumber:
+        type: string
+        description: 'Pickpost or MyPost24 number. Only available if type is FORWARD_TO_PICK_POST or FORWARD_TO_MY_POST_24'
+      street:
+        type: string
+        description: 'Street of the address'
+      houseNumber:
+        type: string
+        description: 'Housenumber of the address'
+      pobox:
+        type: string
+        description: 'Post office box'
+      postcode:
+        type: string
+        description: 'Postcode of the address'
+      city:
+        type: string
+        description: 'City of the address'
       personAddressKey:
         type: string
-        description: 'Identifies a person at a domiclie address (unique)'
-      addressLines:
-        type: array
-        items:
-          type: string
-        description: 'addressLines for a specific service'
+        description: 'Destination personAddressKey of a forward, 0 (zero) if unknown'
+      houseKey:
+        type: string
+        description: 'Housekey of the address'
+      streetKey:
+        type: string
+        description: 'Streetkey of the address'
     required:
-      - personAddressKey
-      - addressLines
+      - type
+      - firstName
+      - lastName
+      - street
+      - postcode
     additionalProperties: false
-    description: 'The service coding indicates a service which is physically visible on a parcel. These services can be provided during automatic or manual processes (e.g. transfer label)'
+    description: 'The service address contains the address data that is stored in the service order'
   ServiceCoding:
     type: object
     properties:
-      serviceId:
-        type: string
-        description: 'Id of a service order'
       serviceOrder:
         $ref: '#/definitions/ServiceOrder'
-        description: 'Indicates the type of the service order'
-      returnReason:
+        description: "Service order of the Recipient that has been processed.\nRequired or not? Are there any ServiceCoding without an serviceorder from sortingsystem?"
+      manualForwardingType:
+        $ref: '#/definitions/ManualForwardingType'
+        description: 'Indicates how the parcel is handled manually.'
+      returnReasonApplied:
         $ref: '#/definitions/ReturnReasonType'
-        description: 'Indicates the reason of a returned mailpiece'
+        description: 'Indicates the reason of a returned mailpiece. Needed if Return reason is changed on MCS'
       processingState:
         $ref: '#/definitions/ProcessingStateType'
-        description: 'Indicates the processing state of a mailpiece (e.g. why the mailpiece has not been processed)'
-      applied:
-        type: boolean
-        description: 'Indicates if a provided service has been applied for a specific mailpiece'
-      sourceSystem:
-        $ref: '#/definitions/SourceSystem'
-        description: 'The system which delivers the service information (physically located on the mailpiece or applied by coder)'
+        description: 'Indicates if the service order has been applied or not'
+    required:
+      - serviceOrder
+      - processingState
     additionalProperties: false
     description: 'The service coding indicates a service which is physically visible on a parcel. These services can be provided during automatic or manual processes (e.g. transfer label)'
-  ServiceInformation:
+  ServiceOrderType:
+    type: string
+    enum:
+      - SINGLE_ORDER
+      - STANDING_ORDER
+      - TRANSFER_LABEL
+    description: "SINGLE_ORDER = order for a specific mailpiece (Empfänger-Einzelauftrag)\nSTANDING_ORDER = order for personaddresskey (Empfänger-Dauerauftrag)\nTRANSFER_LABEL"
+  ServiceOrder:
     type: object
     properties:
+      serviceOrderId:
+        type: string
+        description: 'Id of the service order from the source system'
+      serviceOrderType:
+        $ref: '#/definitions/ServiceOrderType'
+        description: 'Type of the service order. Indicates if it''s an order for a single mailpiece or if it''s an order for an address (personaddresskey)'
       serviceType:
         $ref: '#/definitions/ServiceType'
-        description: 'Type of the service'
-      serviceAddress:
+        description: 'Type of the service. The type is needed to choose the right address label type.'
+      serviceSubType:
+        $ref: '#/definitions/ServiceSubType'
+        description: 'The service types FORWARD and RETAIN have subtypes.'
+      personAddressKey:
+        type: string
+        description: 'The personAddressKey of the original recipient of the mailpiece'
+      recipientAddress:
         $ref: '#/definitions/ServiceAddress'
-        description: 'Service address (forwarding or return address)'
-      taxAmount:
-        type: number
-        description: 'tax amount in CHF'
-      chargingType:
-        $ref: '#/definitions/ChargingType'
-        description: 'Charging type of the service'
-      serviceCodes:
+        description: 'The new recipient address'
+      taxInformation:
+        $ref: '#/definitions/TaxInformation'
+        description: 'The tax information for the service. If available, this information is printed on the address label.'
+      productCodes:
         type: array
         items:
           type: string
-        description: 'Service codes (Products) that needs to be printed on the label'
+        description: 'Product codes (PRZL) that needs to be printed on the label'
+      deliveryDay:
+        $ref: '#/definitions/DeliveryDay'
+        description: 'Detailed information about the service type DELIVERY_DAY'
       returnReason:
         $ref: '#/definitions/ReturnReasonType'
-        description: 'Reason why parcel is returned'
-      retainActionDate:
+        description: 'Indicates the reason of a returned mailpiece'
+      actionDate:
         $ref: '#/definitions/DateTime'
         description: 'Date that needs to be printed on the label in the retain case'
-      retainActionType:
-        $ref: '#/definitions/RetainActionType'
-        description: 'Action type that needs to be printed on the label in the retain case'
     required:
+      - serviceOrderId
+      - serviceOrderType
       - serviceType
     additionalProperties: false
-    description: 'The service information delivered after the service lookup by sorting systems.'
-  ServiceOrder:
+    description: 'Data from the service order that is relevant for the coding system to do the service coding.'
+  ServiceSubType:
     type: string
     enum:
-      - FORWARDING
-      - RETURN_SHIPMENT
-      - MISCARRIAGE
-      - AFTER_TREATMENT
-    description: "FORWARDING = 1 = NachsendungNSP Wenn in einer späteren Phase zu einer RS-Adresse die NS-Abklärung durchgeführt wird und daraus eine NS würde, wird hier NS angegeben\nRETURN_SHIPMENT = 2 = RuecksendungNSP Wenn aus der NS eine RS wurde, wird hier RS angegeben. Bsp. PPR (PostPac Promo): PPR werden nie nachgesendet. Infos zu DL sind für Nachforschungszwecke trotzdem ausgefüllt\nMISCARRIAGE = 3 = FehlleitungNSP\nAFTER_TREATMENT = 4 = Zur Nachbehandlung Informationen zur RS/NS (falls vorhanden) werden ausgefüllt. Der Verarbeitungsstatus wird auf OK gesetzt"
+      - FORWARD_ADDRESSEE
+      - FORWARD_LOCATION
+      - FORWARD_FROM_POBOX
+      - FORWARD_BLUE
+      - FORWARD_RED
+      - FORWARD_YELLOW
+      - RETAIN_DELIVERY
+      - RETAIN_PICKUP
+    description: "FORWARD_ADDRESSEE = forward mailpiece to a person (domicile address)\nFORWARD_LOCATION = forward mailpiece to a post office, pick post, MyPost24\nFORWARD_FROM_POBOX = forward mailpiece from pobox to domicile\nFORWARD_BLUE = specific one of standing orders. not sure if we need them. the coding is not different. for coding (address label) the other forward-subtypes are relevant...\nFORWARD_RED = specific one of standing orders. not sure if we need them. the coding is not different. for coding (address label) the other forward-subtypes are relevant...\nFORWARD_YELLOW = specific one of standing orders. not sure if we need them. the coding is not different. for coding (address label) the other forward-subtypes are relevant...\nRETAIN_DELIVERY = The mailpiece will be delivered after the storage period\nRETAIN_PICKUP = The mailpiece has to be picked up by the customer after the storage period"
   ServiceType:
     type: string
     enum:
-      - FORWARDING
+      - FORWARD
+      - DELIVERY_DAY
       - RETURN
       - RETAIN
-      - DELIVERY_DAY
-      - DELIVERY_TIME
+    description: "FORWARD = forward mailpiece to another address\nDELIVERY_DAY = deliver mailpiece on a specific weekday / at a specific time window\nRETURN = the mailpiece has to returned to the sender\nRETAIN = the mailpiece has to retaind at the postoffice for a specific time"
   SourceSystemSorting:
     type: object
     properties:
@@ -784,13 +878,10 @@ definitions:
         type: string
         description: 'Unique identifier of the sorting center (ONRP).'
         maxLength: 200
-      type:
-        $ref: '#/definitions/SystemTypeSorting'
-        description: 'Indicates the type of the system'
     required:
       - systemName
       - instance
-      - type
+      - locationKey
     additionalProperties: false
   SourceSystem:
     type: object
@@ -817,6 +908,10 @@ definitions:
   SubmitActionEvent:
     type: object
     properties:
+      submitActionId:
+        type: string
+        description: "Unique identifier of a submitAction message\nPrimary key 🔑"
+        maxLength: 200
       processingItemId:
         type: string
         description: 'machine specific id to identify the mailpiece during a sorting process'
@@ -827,22 +922,23 @@ definitions:
       timestamp:
         $ref: '#/definitions/DateTime'
         description: 'Time when the event occured'
-      instruction:
+      codingInstruction:
         $ref: '#/definitions/CodingInstruction'
-        description: 'The type of coding requested by SDDM'
+        description: 'The type of coding requested by sorting system'
       codingDepth:
         $ref: '#/definitions/CodingDepth'
+        description: 'Required coding depth of the sorting system. Relevant in case of codingInstruction = ADDRESS_CODING'
       sourceSystem:
         $ref: '#/definitions/SourceSystemSorting'
-        description: 'Sorting system which requested a coding'
+        description: 'Sorting system which requested the coding'
       serviceInformation:
-        $ref: '#/definitions/ServiceInformation'
-        description: 'Related service information (case SERVICE_CODING)'
+        $ref: '#/definitions/ServiceOrder'
+        description: 'Service information that is needed for the service coding (case codingInstruction = SERVICE_CODING)'
     required:
+      - submitActionId
       - processingItemId
       - timestamp
-      - instruction
-      - codingDepth
+      - codingInstruction
       - sourceSystem
     additionalProperties: false
   Symbology:
@@ -890,11 +986,26 @@ definitions:
       - ADDRESS_VALIDATION_AUTOMATIC
       - ADDRESS_VALIDATION_HUMAN_SUPPORT
     description: "IMAGE_PREPROCESSOR Device which handles image formatting and converting\nIMAGE_CONTROLLER Device which is responsible for the internal enrichment workflow of the coding systems (PieceManager)\nPREANNOUNCEMENT  Device which validates and publishes preannouncement data (Preannouncement processor)\nOCR_ROI_DETECTION    Device which detects ROI elements on an image (e.g. recipient address, barcode, ...)\nOCR_BARCODE  Device which reads / captures barcodes on an image\nOCR_ADDRESS  Device which reads address elements on an image\nVCS_INTERNAL_ROI Device VCS Offshore: Task in the video coding system where the coder detects address ROI elements on an image\nVCS_INTERNAL_PLZ Device VCS Offshore: Task in the video coding system where the coder enters the postcode based on an address ROI image\nVCS_INTERNAL_ADDRESS Device VCS Offshore: Task in the video coding system where the coder enters the recipient address based on an address ROI image\nVCS_EXTERNAL_ROI Device VCS Offshore: Task in the video coding system where the coder detects address ROI elements on an image\nVCS_EXTERNAL_PLZ Device VCS Offshore: Task in the video coding system where the coder enters the postcode based on an address ROI image\nVCS_EXTERNAL_ADDRESS Device VCS Offshore: Task in the video coding system where the coder enters the recipient address based on an address ROI image\nOCR_RETRY_BARCODE    Device which reads / captures barcodes on an image in a following workflow (e.g. after VCS ROI or VCS PLZ)\nOCR_RETRY_ADDRESS    Device which reads address elements on an image in a following workflow (e.g. after VCS ROI or VCS PLZ)\nMANUAL_CODING_REJECT Device where a coder manually captures barcodes and enters address information\nMANUAL_CODING_LIGHT Device where barcodes barcodes, products and the weight is captured (manual or partially automated)\nMANUAL_CODING_BULK   Device where barcodes, weight and dimensions and address information for bulky goods are captured or entered (manual or partially automated)\nMANUAL_CODING_BULK_AUTOMATIC Device where a coder manually captures barcodes and other specific information for bulky goods\nMANUAL_CODING_FLAT_BUNDLE Device where a coder manually captures postcodes for flat bundles\nADDRESS_VALIDATION_AUTOMATIC Device which validates an address in an automated enrichment workflow step (e.g. ocr address)\nADDRESS_VALIDATION_HUMAN_SUPPORT Device which validates an address in an enrichment workflow where a human is involved - as a support of the coder (e.g. MCS or VCS)"
-  SystemTypeSorting:
+  TaxInformation:
+    type: object
+    properties:
+      price:
+        type: number
+        description: 'The price of this service order in CHF'
+      paymentMethod:
+        $ref: '#/definitions/PaymentMethod'
+        description: 'Payment method of the service order. In some cases this information ist printed on the label.'
+    required:
+      - price
+      - paymentMethod
+    additionalProperties: false
+    description: 'Tax information for a service'
+  TimeWindow:
     type: string
     enum:
-      - UNKNOWN
-      - SENDING_DATA_DECISION_MANAGEMENT
+      - REGULAR
+      - EARLY
+      - EVENING
   WorkflowInformation:
     type: object
     properties:
