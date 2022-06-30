@@ -4,7 +4,7 @@ info:
   description: "API definitions for Coding Data\nThe Kafka topic exposes the FinalCodingData-Event, which is forwarded from the MQTT-Broker to kafka   \nThe MQTT topics define the interface between the coding system (Mail Match System incl. MCS) and SDDM\n"
   contact:
     name: gfellerle
-  version: 4.1.0
+  version: 4.1.1-bugfix-PZS-7061-github-pages-stream-api-docs-subobjects-not-browseable.2
 host: 'server:8080'
 basePath: 'Kafka, MQTT'
 paths:
@@ -17,7 +17,7 @@ paths:
       responses:
         '200':
           description: 'Final coding data for other peripheral systems'
-          schema: {type: array, $ref: '#/definitions/FinalCodingEvent'}
+          schema: {type: array, $ref: 'FinalCodingEvent'}
   'rc-ic/v1/coding/transmit-final-result/{srcSystem}/{srcInstance}/{dstSystem}/{dstInstance}/{conversationId}':
     post:
       summary: 'MQTT topic for sending coding data'
@@ -57,7 +57,7 @@ paths:
           default: '12345'
       responses:
         default:
-          schema: {$ref: '#/definitions/FinalCodingEvent'}
+          schema: {$ref: 'FinalCodingEvent'}
   'rc-ic/v1/coding/submit-action/{srcSystem}/{srcInstance}/{dstSystem}/{dstInstance}/{conversationId}':
     post:
       summary: 'MQTT topic for coding instructions'
@@ -97,7 +97,7 @@ paths:
           default: '12345'
       responses:
         default:
-          schema: {$ref: '#/definitions/SubmitActionEvent'}
+          schema: {$ref: 'SubmitActionEvent'}
 definitions:
   Int:
     type: integer
@@ -106,7 +106,7 @@ definitions:
     type: object
     properties:
       person:
-        $ref: '#/definitions/Person'
+        $ref: 'Person'
         description: 'Information regarding a person'
       additionalAddressLine1:
         type: string
@@ -117,10 +117,10 @@ definitions:
         description: "Unpersonalized and not official information (e.g. Chalet Alpenblick)\n(AMPplus: Adresszusatz 2)"
         maxLength: 65
       locality:
-        $ref: '#/definitions/Locality'
+        $ref: 'Locality'
         description: 'Locality of an address'
       deliveryPointInformation:
-        $ref: '#/definitions/DeliveryPoint'
+        $ref: 'DeliveryPoint'
         description: 'Delivery point of an address'
       addressLines:
         type: array
@@ -128,17 +128,17 @@ definitions:
           type: string
         description: 'Address lines (raw, unvalidated address data submitted by the customer)'
       sourceSystem:
-        $ref: '#/definitions/SourceSystem'
+        $ref: 'SourceSystem'
         description: "Source of the address\nPossible sources in this context are:\nPREANNOUNCEMENT\nOCR_ADDRESS\nVCS_INTERNAL_ADDRESS\nVCS_EXTERNAL_ADDRESS\nOCR_RETRY_ADDRESS\nMANUAL_CODING_REJECT\nMANUAL_CODING_BULK\nMANUAL_CODING_BULK_AUTOMATIC"
       coderId:
         type: string
         description: 'Identification of the coder which typed the address'
         maxLength: 50
       masterDataKeys:
-        $ref: '#/definitions/MasterDataKeys'
+        $ref: 'MasterDataKeys'
         description: 'All validated keys related to the read address elements'
       state:
-        $ref: '#/definitions/PersonalizedAddressState'
+        $ref: 'PersonalizedAddressState'
         description: 'Indicates state of a validated person living at a specific address'
     required:
       - sourceSystem
@@ -174,31 +174,31 @@ definitions:
     type: object
     properties:
       address:
-        $ref: '#/definitions/Address'
+        $ref: 'Address'
         description: 'Contains information regarding the address located on a mailpiece or transfered by a preannouncement system'
       products:
         type: array
         items:
-          $ref: '#/definitions/Product'
+          $ref: 'Product'
         description: 'Contains validated products, physically located on a mailpiece or transfered by a preannouncement system'
       informationCarriers:
         type: array
         items:
-          $ref: '#/definitions/InformationCarrier'
+          $ref: 'InformationCarrier'
         description: 'Information which were physically present on the parcel (e.g. barcodes)'
       serviceCoding:
-        $ref: '#/definitions/ServiceCoding'
+        $ref: 'ServiceCoding'
         description: 'Contains service related information which is visible on a parcel'
       sourceSystem:
-        $ref: '#/definitions/SourceSystem'
+        $ref: 'SourceSystem'
         description: 'The system which publishes the event'
       images:
         type: array
         items:
-          $ref: '#/definitions/Image'
+          $ref: 'Image'
         description: 'The images captured during coding'
       workflowInformation:
-        $ref: '#/definitions/WorkflowInformation'
+        $ref: 'WorkflowInformation'
         description: 'Detailed insights in the internal workflow steps which occured to deliver the information in this event'
     required:
       - sourceSystem
@@ -228,7 +228,7 @@ definitions:
     type: object
     properties:
       houseNumber:
-        $ref: '#/definitions/Int'
+        $ref: 'Int'
         description: 'House number of an address (e.g. Musterstrasse ->14<-)'
       houseNumberExtension:
         type: string
@@ -239,7 +239,7 @@ definitions:
         description: "Identifier for special address elements (e.g. floor door- or appartementnumber)\n(AMPplus: Stockwerk / Tür- oder Wohnungsnummer)"
         maxLength: 10
       deliveryPointType:
-        $ref: '#/definitions/DeliveryPointType'
+        $ref: 'DeliveryPointType'
         description: 'Type of a delivery point'
       poBoxNumber:
         type: string
@@ -250,7 +250,7 @@ definitions:
         description: 'Customernumber (pickPost- / myPost24 number)'
         maxLength: 8
       state:
-        $ref: '#/definitions/DeliveryPointState'
+        $ref: 'DeliveryPointState'
         description: 'Indicates state of a validated delivery point'
     required:
       - deliveryPointType
@@ -278,16 +278,16 @@ definitions:
         type: string
         description: 'Internal id of the specific internal enrichment workflow'
       order:
-        $ref: '#/definitions/Int'
+        $ref: 'Int'
         description: 'Order of the enrichment'
       type:
-        $ref: '#/definitions/SystemTypeCoding'
+        $ref: 'SystemTypeCoding'
         description: 'Type of the sytem which processed the enrichment'
       timestampBegin:
-        $ref: '#/definitions/DateTime'
+        $ref: 'DateTime'
         description: 'Start time of the enrichment workflow'
       timestampEnd:
-        $ref: '#/definitions/DateTime'
+        $ref: 'DateTime'
         description: 'End time of the enrichment workflow'
     required:
       - eventId
@@ -319,13 +319,13 @@ definitions:
         description: 'Id to identify the mailpiece during a sorting process'
         maxLength: 32
       idTags:
-        $ref: '#/definitions/IdentifierTags'
+        $ref: 'IdentifierTags'
         description: 'Contains a list of ids identifying the processing item.'
       timestamp:
-        $ref: '#/definitions/DateTime'
+        $ref: 'DateTime'
         description: 'Time when the event is published'
       coding:
-        $ref: '#/definitions/Coding'
+        $ref: 'Coding'
         description: "Data captured during a workflow in the coding system\nThis may contain aggregated data from multiple enrichment steps"
     required:
       - codingId
@@ -390,7 +390,7 @@ definitions:
         description: 'Key assigned to an image'
         maxLength: 200
       sourceSystem:
-        $ref: '#/definitions/SourceSystem'
+        $ref: 'SourceSystem'
         description: 'System / device which captured image (or ROI image)'
       mainFace:
         type: boolean
@@ -398,13 +398,13 @@ definitions:
       detectedElements:
         type: array
         items:
-          $ref: '#/definitions/DetectedElements'
+          $ref: 'DetectedElements'
         description: 'Indicates the ROIs found on the image'
       detectionError:
-        $ref: '#/definitions/DetectionError'
+        $ref: 'DetectionError'
         description: 'Indicates if there is an error regarding the image'
       face:
-        $ref: '#/definitions/Face'
+        $ref: 'Face'
         description: 'Face of the parcel on which the image is located'
     required:
       - key
@@ -417,16 +417,16 @@ definitions:
     type: object
     properties:
       symbology:
-        $ref: '#/definitions/Symbology'
+        $ref: 'Symbology'
         description: 'Symbology of an information carrier'
       value:
         type: string
         description: 'Value of an information carrier'
       sourceSystem:
-        $ref: '#/definitions/SourceSystem'
+        $ref: 'SourceSystem'
         description: "Source of an information carrier\nPossible sources in this context are:\nPREANNOUNCEMENT_CODING Coding data delivered by a preannouncement from customer\nAUTOMATIC_CODING\tAutomatic coding system using optical character recognition\nMANUAL_CODING_REJECT\tManual coding station\nMANUAL_CODING_LIGHT\tManual coding by a a portable scanner\nMANUAL_CODING_BULK\tManual bulk coding station"
       timestamp:
-        $ref: '#/definitions/DateTime'
+        $ref: 'DateTime'
         description: 'Timestamp when the information carrier is read from the parcel'
       coderId:
         type: string
@@ -445,7 +445,7 @@ definitions:
         type: string
         description: 'Value of a key'
       confidence:
-        $ref: '#/definitions/Int'
+        $ref: 'Int'
         description: 'Confidence of a key (based on validation with masterdata and coding rules)'
       reasons:
         type: array
@@ -523,31 +523,31 @@ definitions:
     type: object
     properties:
       houseKey:
-        $ref: '#/definitions/KeyWithConfidence'
+        $ref: 'KeyWithConfidence'
         description: 'Identifies the address physically located on the mailpiece (e.g. domicile, poBox, pickPost / myPost 24 or other service address)'
       domicileHouseKey:
-        $ref: '#/definitions/KeyWithConfidence'
+        $ref: 'KeyWithConfidence'
         description: 'Identifies an address where the recipient lives (can be different from the physical address on the parcel, e.g. if the recipient has registered po-boxes or forwardings)'
       personAddressKey:
-        $ref: '#/definitions/KeyWithConfidence'
+        $ref: 'KeyWithConfidence'
         description: 'Identifies a person at a domiclie address (AMP-Key)'
       streetKey:
-        $ref: '#/definitions/KeyWithConfidence'
+        $ref: 'KeyWithConfidence'
         description: 'Identifies the street physically located on the mailpiece (street key in AMPplus)'
       postCodeKey:
-        $ref: '#/definitions/KeyWithConfidence'
+        $ref: 'KeyWithConfidence'
         description: 'Identifies the postcode physically located on the mailpiece (Ordnungsnummer Post (ONRP), Fremdschlüssel zu ASDP)'
       countryKey:
-        $ref: '#/definitions/KeyWithConfidence'
+        $ref: 'KeyWithConfidence'
         description: 'Identifies the country physically located on the mailpiece (ID in the country-table in MDS)'
       mailBoxKey:
-        $ref: '#/definitions/KeyWithConfidence'
+        $ref: 'KeyWithConfidence'
         description: 'Identifies the mailbox physically located on the mailpiece (HBK ID)'
       communityKey:
-        $ref: '#/definitions/KeyWithConfidence'
+        $ref: 'KeyWithConfidence'
         description: 'Identifies the community physically located on the mailpiece (BFS-Nr Gemeinde, Fremdschlüssel zu ASDP)'
       militaryKey:
-        $ref: '#/definitions/KeyWithConfidence'
+        $ref: 'KeyWithConfidence'
         description: 'MLZ physically located on the mailpiece (read by the coding system)'
     additionalProperties: false
     description: 'Resolved address keys'
@@ -590,7 +590,7 @@ definitions:
         description: 'Suffix of the name (e.g. Junior, Senior)'
         maxLength: 30
       personType:
-        $ref: '#/definitions/PersonType'
+        $ref: 'PersonType'
         description: 'Indicates if the person is a company or person'
       organizationName:
         type: string
@@ -605,10 +605,10 @@ definitions:
         description: 'Addon2 of an organization name'
         maxLength: 35
       legalForm:
-        $ref: '#/definitions/LegalForm'
+        $ref: 'LegalForm'
         description: 'Legal form of the company'
       state:
-        $ref: '#/definitions/PersonState'
+        $ref: 'PersonState'
         description: 'Indicates state of a validated person'
     additionalProperties: false
     description: 'Information related to the person of an address'
@@ -639,7 +639,7 @@ definitions:
         type: string
         description: 'Shortname of validated product (e.g. PRI)'
       sourceSystem:
-        $ref: '#/definitions/SourceSystem'
+        $ref: 'SourceSystem'
         description: "Source system which captured the product\nPossible sources:\nPREANNOUNCEMENT Coding data delivered by a preannouncement from customer\nAUTOMATIC_CODING\tAutomatic coding system using optical character recognition\nMANUAL_CODING_REJECT\tManual coding station\nMANUAL_CODING_LIGHT\tManual coding by a a portable scanner\nMANUAL_CODING_BULK\tManual bulk coding station"
     required:
       - code
@@ -706,19 +706,19 @@ definitions:
         type: string
         description: 'Id of a service order'
       serviceOrder:
-        $ref: '#/definitions/ServiceOrder'
+        $ref: 'ServiceOrder'
         description: 'Indicates the type of the service order'
       returnReason:
-        $ref: '#/definitions/ReturnReasonType'
+        $ref: 'ReturnReasonType'
         description: 'Indicates the reason of a returned mailpiece'
       processingState:
-        $ref: '#/definitions/ProcessingStateType'
+        $ref: 'ProcessingStateType'
         description: 'Indicates the processing state of a mailpiece (e.g. why the mailpiece has not been processed)'
       applied:
         type: boolean
         description: 'Indicates if a provided service has been applied for a specific mailpiece'
       sourceSystem:
-        $ref: '#/definitions/SourceSystem'
+        $ref: 'SourceSystem'
         description: 'The system which delivers the service information (physically located on the mailpiece or applied by coder)'
     additionalProperties: false
     description: 'The service coding indicates a service which is physically visible on a parcel. These services can be provided during automatic or manual processes (e.g. transfer label)'
@@ -726,16 +726,16 @@ definitions:
     type: object
     properties:
       serviceType:
-        $ref: '#/definitions/ServiceType'
+        $ref: 'ServiceType'
         description: 'Type of the service'
       serviceAddress:
-        $ref: '#/definitions/ServiceAddress'
+        $ref: 'ServiceAddress'
         description: 'Service address (forwarding or return address)'
       taxAmount:
         type: number
         description: 'tax amount in CHF'
       chargingType:
-        $ref: '#/definitions/ChargingType'
+        $ref: 'ChargingType'
         description: 'Charging type of the service'
       serviceCodes:
         type: array
@@ -743,13 +743,13 @@ definitions:
           type: string
         description: 'Service codes (Products) that needs to be printed on the label'
       returnReason:
-        $ref: '#/definitions/ReturnReasonType'
+        $ref: 'ReturnReasonType'
         description: 'Reason why parcel is returned'
       retainActionDate:
-        $ref: '#/definitions/DateTime'
+        $ref: 'DateTime'
         description: 'Date that needs to be printed on the label in the retain case'
       retainActionType:
-        $ref: '#/definitions/RetainActionType'
+        $ref: 'RetainActionType'
         description: 'Action type that needs to be printed on the label in the retain case'
     required:
       - serviceType
@@ -785,7 +785,7 @@ definitions:
         description: 'Unique identifier of the sorting center (ONRP).'
         maxLength: 200
       type:
-        $ref: '#/definitions/SystemTypeSorting'
+        $ref: 'SystemTypeSorting'
         description: 'Indicates the type of the system'
     required:
       - systemName
@@ -806,7 +806,7 @@ definitions:
         description: 'Unique identifier of the sorting center (ONRP).'
         maxLength: 200
       type:
-        $ref: '#/definitions/SystemTypeCoding'
+        $ref: 'SystemTypeCoding'
         description: 'Indicates the type of the system'
     required:
       - systemName
@@ -822,21 +822,21 @@ definitions:
         description: 'machine specific id to identify the mailpiece during a sorting process'
         maxLength: 32
       idTags:
-        $ref: '#/definitions/IdentifierTags'
+        $ref: 'IdentifierTags'
         description: 'Optional list of Ids that identifies a mailpiece in a specific context'
       timestamp:
-        $ref: '#/definitions/DateTime'
+        $ref: 'DateTime'
         description: 'Time when the event occured'
       instruction:
-        $ref: '#/definitions/CodingInstruction'
+        $ref: 'CodingInstruction'
         description: 'The type of coding requested by SDDM'
       codingDepth:
-        $ref: '#/definitions/CodingDepth'
+        $ref: 'CodingDepth'
       sourceSystem:
-        $ref: '#/definitions/SourceSystemSorting'
+        $ref: 'SourceSystemSorting'
         description: 'Sorting system which requested a coding'
       serviceInformation:
-        $ref: '#/definitions/ServiceInformation'
+        $ref: 'ServiceInformation'
         description: 'Related service information (case SERVICE_CODING)'
     required:
       - processingItemId
@@ -901,16 +901,16 @@ definitions:
       enrichmentSteps:
         type: array
         items:
-          $ref: '#/definitions/EnrichmentStep'
+          $ref: 'EnrichmentStep'
         description: 'The enrichment which occured during a coding workflow'
       nextEnrichmentStep:
-        $ref: '#/definitions/EnrichmentStep'
+        $ref: 'EnrichmentStep'
         description: 'Indicates the next possible internal enrichment workflow step'
       maxCodingLevelAchieved:
         type: boolean
         description: 'Indicates if the maximal possible coding quality is achieved'
       rejectType:
-        $ref: '#/definitions/RejectType'
+        $ref: 'RejectType'
         description: "Describes the type of the rejection\nIn some cases an enrichment workflow can be rejected"
       rejectReason:
         type: string
