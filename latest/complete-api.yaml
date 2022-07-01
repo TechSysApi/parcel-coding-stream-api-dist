@@ -4,7 +4,7 @@ info:
   description: "API definitions for Coding Data\nThe Kafka topic exposes the FinalCodingData-Event, which is forwarded from the MQTT-Broker to kafka   \nThe MQTT topics define the interface between the coding system (Mail Match System incl. MCS) and SDDM\n"
   contact:
     name: gfellerle
-  version: 4.2.0-feature-serviceInformation.1
+  version: 4.2.0-feature-serviceInformation.2
 host: 'server:8080'
 basePath: 'Kafka, MQTT'
 paths:
@@ -153,6 +153,13 @@ definitions:
       - sourceSystem
     additionalProperties: false
     description: 'Address captured by an enrichment device or delivered by a preannouncement system'
+  ChargingType:
+    type: string
+    enum:
+      - CHARGEABLE
+      - FREE
+      - CHARGEABLE_BILL
+    description: "CHARGEABLE = kostenpflichtig (Taxe muss berechnet werden)\nFREE = kostenlos (\"Taxfrei\" auf Etikette)\nCHARGEABLE_BILL = kostenpflichtig auf Rechnung (Hinweis auf Etikette)"
   CodingDepth:
     type: string
     enum:
@@ -589,8 +596,7 @@ definitions:
       - TSP
       - PAID_BY_SENDER
       - TAX_FREE
-      - BY_INVOICE
-    description: "AUTOMATIC = the fee is invoiced automatically (Abrechnung via Pve)\nPAID_BY_SENDER = the fee is paid by the sender\nTSP = ? wird aufgedruckt und bei Empfang bezahlt?\nTAX_FREE = the service is tax free\nBY_INVOICE = the fee is paid by invoice"
+    description: "AUTOMATIC = the tax is invoiced automatically (Abrechnung via Pve)\nPAID_BY_SENDER = the tax is paid by the sender\nTSP = franking Value will be printed on the address label\nTAX_FREE = 0.00 will be printed on the address label"
   PersonState:
     type: string
     enum:
@@ -779,7 +785,7 @@ definitions:
     properties:
       serviceOrder:
         $ref: '#/definitions/ServiceOrder'
-        description: "Service order of the Recipient that has been processed.\nRequired or not? Are there any ServiceCoding without an serviceorder from sortingsystem?"
+        description: 'Service order of the Recipient that has been processed.'
       manualForwardingType:
         $ref: '#/definitions/ManualForwardingType'
         description: 'Indicates how the parcel is handled manually.'
@@ -790,7 +796,6 @@ definitions:
         $ref: '#/definitions/ProcessingStateType'
         description: 'Indicates if the service order has been applied or not'
     required:
-      - serviceOrder
       - processingState
     additionalProperties: false
     description: 'The service coding indicates a service which is physically visible on a parcel. These services can be provided during automatic or manual processes (e.g. transfer label)'
@@ -800,7 +805,8 @@ definitions:
       - SINGLE_ORDER
       - STANDING_ORDER
       - TRANSFER_LABEL
-    description: "SINGLE_ORDER = order for a specific mailpiece (Empfänger-Einzelauftrag)\nSTANDING_ORDER = order for personaddresskey (Empfänger-Dauerauftrag)\nTRANSFER_LABEL"
+      - MILITARY
+    description: "SINGLE_ORDER = order for a specific mailpiece (Empfänger-Einzelauftrag)\nSTANDING_ORDER = order for personaddresskey (Empfänger-Dauerauftrag)\nTRANSFER_LABEL = order for a transfer label case\nMILITARY = order for a military address"
   ServiceOrder:
     type: object
     properties:
@@ -822,9 +828,12 @@ definitions:
       recipientAddress:
         $ref: '#/definitions/ServiceAddress'
         description: 'The new recipient address'
+      chargingOption:
+        $ref: '#/definitions/ChargingType'
+        description: 'Indicates if the service is chargeable or not. If it''s chargable the field taxInformation contains the tax to be printed on the address label.'
       taxInformation:
         $ref: '#/definitions/TaxInformation'
-        description: 'The tax information for the service. If available, this information is printed on the address label.'
+        description: 'The tax information for the service. If a franking value is available, this information has to be printed on the address label.'
       productCodes:
         type: array
         items:
@@ -843,6 +852,7 @@ definitions:
       - serviceOrderId
       - serviceOrderType
       - serviceType
+      - chargingOption
     additionalProperties: false
     description: 'Data from the service order that is relevant for the coding system to do the service coding.'
   ServiceSubType:
@@ -856,7 +866,7 @@ definitions:
       - FORWARD_YELLOW
       - RETAIN_DELIVERY
       - RETAIN_PICKUP
-    description: "FORWARD_ADDRESSEE = forward mailpiece to a person (domicile address)\nFORWARD_LOCATION = forward mailpiece to a post office, pick post, MyPost24\nFORWARD_FROM_POBOX = forward mailpiece from pobox to domicile\nFORWARD_BLUE = specific one of standing orders. not sure if we need them. the coding is not different. for coding (address label) the other forward-subtypes are relevant...\nFORWARD_RED = specific one of standing orders. not sure if we need them. the coding is not different. for coding (address label) the other forward-subtypes are relevant...\nFORWARD_YELLOW = specific one of standing orders. not sure if we need them. the coding is not different. for coding (address label) the other forward-subtypes are relevant...\nRETAIN_DELIVERY = The mailpiece will be delivered after the storage period\nRETAIN_PICKUP = The mailpiece has to be picked up by the customer after the storage period"
+    description: "FORWARD_ADDRESSEE = forward mailpiece to a person (domicile address)\nFORWARD_LOCATION = forward mailpiece to a post office, pick post, MyPost24\nFORWARD_FROM_POBOX = forward mailpiece from pobox to domicile\nFORWARD_BLUE = Specific one of standing orders. The coding is not different, but information is needed in coding result.\nFORWARD_RED = Specific one of standing orders. The coding is not different, but information is needed in coding result.\nFORWARD_YELLOW = Specific one of standing orders. The coding is not different, but information is needed in coding result.\nRETAIN_DELIVERY = The mailpiece will be delivered after the storage period\nRETAIN_PICKUP = The mailpiece has to be picked up by the customer after the storage period"
   ServiceType:
     type: string
     enum:
@@ -865,24 +875,6 @@ definitions:
       - RETURN
       - RETAIN
     description: "FORWARD = forward mailpiece to another address\nDELIVERY_DAY = deliver mailpiece on a specific weekday / at a specific time window\nRETURN = the mailpiece has to returned to the sender\nRETAIN = the mailpiece has to retaind at the postoffice for a specific time"
-  SourceSystemSorting:
-    type: object
-    properties:
-      systemName:
-        type: string
-        description: 'Device which provided the information'
-      instance:
-        type: string
-        description: 'Instance of the device'
-      locationKey:
-        type: string
-        description: 'Unique identifier of the sorting center (ONRP).'
-        maxLength: 200
-    required:
-      - systemName
-      - instance
-      - locationKey
-    additionalProperties: false
   SourceSystem:
     type: object
     properties:
@@ -896,14 +888,10 @@ definitions:
         type: string
         description: 'Unique identifier of the sorting center (ONRP).'
         maxLength: 200
-      type:
-        $ref: '#/definitions/SystemTypeCoding'
-        description: 'Indicates the type of the system'
     required:
       - systemName
       - instance
       - locationKey
-      - type
     additionalProperties: false
   SubmitActionEvent:
     type: object
@@ -928,12 +916,12 @@ definitions:
       codingDepth:
         $ref: '#/definitions/CodingDepth'
         description: 'Required coding depth of the sorting system. Relevant in case of codingInstruction = ADDRESS_CODING'
-      sourceSystem:
-        $ref: '#/definitions/SourceSystemSorting'
-        description: 'Sorting system which requested the coding'
       serviceInformation:
         $ref: '#/definitions/ServiceOrder'
         description: 'Service information that is needed for the service coding (case codingInstruction = SERVICE_CODING)'
+      sourceSystem:
+        $ref: '#/definitions/SourceSystem'
+        description: 'Sorting system which requested the coding'
     required:
       - submitActionId
       - processingItemId
@@ -989,14 +977,13 @@ definitions:
   TaxInformation:
     type: object
     properties:
-      price:
+      frankingValue:
         type: number
-        description: 'The price of this service order in CHF'
+        description: 'The Tax of this service in CHF. This Value is printed on the address label.'
       paymentMethod:
         $ref: '#/definitions/PaymentMethod'
-        description: 'Payment method of the service order. In some cases this information ist printed on the label.'
+        description: 'Payment method of the service order. The remark on the address label depends on this value'
     required:
-      - price
       - paymentMethod
     additionalProperties: false
     description: 'Tax information for a service'
