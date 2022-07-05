@@ -4,7 +4,7 @@ info:
   description: "API definitions for Coding Data\nThe Kafka topic exposes the FinalCodingData-Event, which is forwarded from the MQTT-Broker to kafka   \nThe MQTT topics define the interface between the coding system (Mail Match System incl. MCS) and SDDM\n"
   contact:
     name: gfellerle
-  version: 4.2.0-feature-separatemqttmessage.1
+  version: 4.2.0-feature-separatemqttmessage.2
 host: 'server:8080'
 basePath: 'Kafka, MQTT'
 paths:
@@ -18,13 +18,18 @@ paths:
         '200':
           description: 'Final coding data for other peripheral systems'
           schema: {type: array, $ref: 'FinalCodingEvent'}
-  'rc-ic/v1/coding/transmit-final-result/{srcSystem}/{srcInstance}':
+  '/{locationKey}/rc-ic/v1/coding/transmit-final-result/{srcSystem}/{srcInstance}':
     post:
       summary: 'MQTT topic for sending coding data to the sorting system'
       description: 'All the related coding data of a specific coding workflow (e.g. OCR Addresscoding, VCS-coding, ...)'
       tags:
         - MQTT
       parameters:
+        -
+          name: locationKey
+          in: path
+          description: 'ONRP (Ordnungsnummer der Poststelle) of the sorting center'
+          type: string
         -
           name: srcSystem
           in: path
@@ -40,13 +45,18 @@ paths:
       responses:
         default:
           schema: {$ref: 'TransmitFinalResultEvent'}
-  'rc-ic/v1/coding/submit-action/{srcSystem}/{srcInstance}':
+  '/{locationKey}/rc-ic/v1/coding/submit-action/{srcSystem}/{srcInstance}':
     post:
       summary: 'MQTT topic for coding instructions'
       description: 'Used by Sorting Systems to provide coding instructions (e.g. type of coding needed)'
       tags:
         - MQTT
       parameters:
+        -
+          name: locationKey
+          in: path
+          description: 'ONRP (Ordnungsnummer der Poststelle) of the sorting center'
+          type: string
         -
           name: srcSystem
           in: path
@@ -173,12 +183,12 @@ definitions:
       products:
         type: array
         items:
-          $ref: 'Product'
+          $ref: 'ProductEnriched'
         description: 'Contains validated products, physically located on a mailpiece or transfered by a preannouncement system'
       informationCarriers:
         type: array
         items:
-          $ref: 'InformationCarrier'
+          $ref: 'InformationCarrierEnriched'
         description: 'Information which were physically present on the parcel (e.g. barcodes)'
       serviceCoding:
         $ref: 'ServiceCoding'
@@ -498,7 +508,7 @@ definitions:
       - face
     additionalProperties: false
     description: 'Image information used by coding system'
-  InformationCarrier:
+  InformationCarrierEnriched:
     type: object
     properties:
       symbology:
@@ -517,6 +527,20 @@ definitions:
         type: string
         description: 'Identification of the coder which scanned or typed the information carrier'
         maxLength: 50
+    required:
+      - symbology
+      - value
+    additionalProperties: false
+    description: 'Identified and captured information carrier (e.g. barcodes, logos)'
+  InformationCarrier:
+    type: object
+    properties:
+      symbology:
+        $ref: 'Symbology'
+        description: 'Symbology of an information carrier'
+      value:
+        type: string
+        description: 'Value of an information carrier'
     required:
       - symbology
       - value
@@ -730,7 +754,7 @@ definitions:
       - INVALID_PAYMENT_TYPE
       - MANUAL_FORWARDING
     description: "OK = 1 = Ok\nNO_FORWARDING = 2 = Keine NS/RS\nINVALID_PAYMENT_TYPE = 3 = Ungültige Bezahlart\nMANUAL_FORWARDING = 4 = Manuelle Nachsendung (Kein NSA gefunden, aber auf Transferetikette hat Bote NS-Adresse ausgefüllt)\n\nStatus 2 wird gesetzt, wenn der Typist eine NS- oder RS-Behandlung abbricht und auf die Paketadresse codiert.\nSomit können diese Fälle zu normalen MCS-Fälle unterschieden werden.\nD.h. Informationsart NS oder RS und die weiteren Felder werden beibehalten, aber der Status unterscheidet sich."
-  Product:
+  ProductEnriched:
     type: object
     properties:
       code:
@@ -742,6 +766,19 @@ definitions:
       sourceSystem:
         $ref: 'SourceSystem'
         description: "Source system which captured the product\nPossible sources:\nPREANNOUNCEMENT Coding data delivered by a preannouncement from customer\nAUTOMATIC_CODING\tAutomatic coding system using optical character recognition\nMANUAL_CODING_REJECT\tManual coding station\nMANUAL_CODING_LIGHT\tManual coding by a a portable scanner\nMANUAL_CODING_BULK\tManual bulk coding station"
+    required:
+      - code
+    additionalProperties: false
+    description: 'Identified and validated product (old PRZL, "Zusatzleistung")'
+  Product:
+    type: object
+    properties:
+      code:
+        type: string
+        description: 'Validated product code (e.g. 509)'
+      shortName:
+        type: string
+        description: 'Shortname of validated product (e.g. PRI)'
     required:
       - code
     additionalProperties: false
