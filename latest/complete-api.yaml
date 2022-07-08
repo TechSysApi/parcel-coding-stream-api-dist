@@ -4,7 +4,7 @@ info:
   description: "API definitions for Coding Data\nThe Kafka topic exposes the FinalCodingData-Event, which is forwarded from the MQTT-Broker to kafka   \nThe MQTT topics define the interface between the coding system (Mail Match System incl. MCS) and SDDM\n"
   contact:
     name: gfellerle
-  version: 4.2.0-feature-separatemqttmessage.5
+  version: 4.2.0-feature-separatemqttmessage.6
 host: 'server:8080'
 basePath: 'Kafka, MQTT'
 paths:
@@ -346,10 +346,10 @@ definitions:
     properties:
       dayOfTheWeek:
         $ref: 'Day'
-        description: 'Day of the week when the mailpiece should be delivered. Only available in case of serviceType = DELIVERY_DAY'
+        description: 'Day of the week when the mailpiece should be delivered. Only available in case of serviceType = DELIVERY_SLOT'
       timeWindow:
         $ref: 'TimeWindow'
-        description: 'Time window when the mailpiece should be delivered. Only available in case of serviceType = DELIVERY_DAY'
+        description: 'Time window when the mailpiece should be delivered. Only available in case of serviceType = DELIVERY_SLOT'
     additionalProperties: false
     description: 'Information about the desired delivery day and time of the customer'
   DetectedElements:
