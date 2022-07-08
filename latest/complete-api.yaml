@@ -4,7 +4,7 @@ info:
   description: "API definitions for Coding Data\nThe Kafka topic exposes the FinalCodingData-Event, which is forwarded from the MQTT-Broker to kafka   \nThe MQTT topics define the interface between the coding system (Mail Match System incl. MCS) and SDDM\n"
   contact:
     name: gfellerle
-  version: 4.2.0-feature-separatemqttmessage.2
+  version: 4.2.0-feature-separatemqttmessage.3
 host: 'server:8080'
 basePath: 'Kafka, MQTT'
 paths:
@@ -122,12 +122,12 @@ definitions:
   AddressType:
     type: string
     enum:
-      - FORWARD_TO_PERSON
+      - FORWARD_TO_DOMICILE
       - FORWARD_TO_POBOX
       - FORWARD_TO_POST_OFFICE
       - FORWARD_TO_PICK_POST
       - FORWARD_TO_MY_POST_24
-    description: "FORWARD_TO_PERSON = forward to domicile\nFORWARD_TO_POBOX = forward to pobox\nFORWARD_TO_POST_OFFICE = forward to postoffice\nFORWARD_TO_PICK_POST = forward to pickpost\nFORWARD_TO_MY_POST_24 = forward to mypost24"
+    description: "FORWARD_TO_DOMICILE = forward to domicile\nFORWARD_TO_POBOX = forward to pobox\nFORWARD_TO_POST_OFFICE = forward to postoffice\nFORWARD_TO_PICK_POST = forward to pickpost\nFORWARD_TO_MY_POST_24 = forward to mypost24"
   Address:
     type: object
     properties:
@@ -191,7 +191,7 @@ definitions:
           $ref: 'InformationCarrierEnriched'
         description: 'Information which were physically present on the parcel (e.g. barcodes)'
       serviceCoding:
-        $ref: 'ServiceCoding'
+        $ref: 'ServiceCodingEnriched'
         description: 'Contains service related information which is visible on a parcel'
       sourceSystem:
         $ref: 'SourceSystem'
@@ -570,6 +570,14 @@ definitions:
       - confidence
     additionalProperties: false
     description: 'Key with confidence base on validation'
+  Language:
+    type: string
+    enum:
+      - GERMAN
+      - FRENCH
+      - ITALIAN
+      - ENGLISH
+    description: Language
   LegalForm:
     type: string
     enum:
@@ -634,7 +642,7 @@ definitions:
       - RETURN_SHIPMENT
       - MISCARRIAGE
       - AFTER_TREATMENT
-    description: "FORWARDING = 1 = NachsendungNSP Wenn in einer späteren Phase zu einer RS-Adresse die NS-Abklärung durchgeführt wird und daraus eine NS würde, wird hier NS angegeben\nRETURN_SHIPMENT = 2 = RuecksendungNSP Wenn aus der NS eine RS wurde, wird hier RS angegeben. Bsp. PPR (PostPac Promo): PPR werden nie nachgesendet. Infos zu DL sind für Nachforschungszwecke trotzdem ausgefüllt\nMISCARRIAGE = 3 = FehlleitungNSP\nAFTER_TREATMENT = 4 = Zur Nachbehandlung Informationen zur RS/NS (falls vorhanden) werden ausgefüllt. Der Verarbeitungsstatus wird auf OK gesetzt"
+    description: "FORWARDING = NachsendungNSP Wenn in einer späteren Phase zu einer RS-Adresse die NS-Abklärung durchgeführt wird und daraus eine NS würde, wird hier NS angegeben\nRETURN_SHIPMENT = RuecksendungNSP Wenn aus der NS eine RS wurde, wird hier RS angegeben. Bsp. PPR (PostPac Promo): PPR werden nie nachgesendet. Infos zu DL sind für Nachforschungszwecke trotzdem ausgefüllt\nMISCARRIAGE = FehlleitungNSP\nAFTER_TREATMENT = Zur Nachbehandlung Informationen zur RS/NS (falls vorhanden) werden ausgefüllt. Der Verarbeitungsstatus wird auf OK gesetzt"
   MasterDataKeys:
     type: object
     properties:
@@ -751,9 +759,8 @@ definitions:
     enum:
       - OK
       - NO_FORWARDING
-      - INVALID_PAYMENT_TYPE
       - MANUAL_FORWARDING
-    description: "OK = 1 = Ok\nNO_FORWARDING = 2 = Keine NS/RS\nINVALID_PAYMENT_TYPE = 3 = Ungültige Bezahlart\nMANUAL_FORWARDING = 4 = Manuelle Nachsendung (Kein NSA gefunden, aber auf Transferetikette hat Bote NS-Adresse ausgefüllt)\n\nStatus 2 wird gesetzt, wenn der Typist eine NS- oder RS-Behandlung abbricht und auf die Paketadresse codiert.\nSomit können diese Fälle zu normalen MCS-Fälle unterschieden werden.\nD.h. Informationsart NS oder RS und die weiteren Felder werden beibehalten, aber der Status unterscheidet sich."
+    description: "OK = Ok\nNO_FORWARDING = Keine NS/RS. Wenn der Codierer eine NS- oder RS-Behandlung abbricht und auf die Paketadresse codiert.\nMANUAL_FORWARDING = Manuelle Nachsendung (Kein NSA gefunden, aber auf Transferetikette hat Bote NS-Adresse ausgefüllt)"
   ProductEnriched:
     type: object
     properties:
@@ -850,7 +857,7 @@ definitions:
         description: 'City of the address'
       personAddressKey:
         type: string
-        description: 'Destination personAddressKey of a forward, 0 (zero) if unknown'
+        description: 'PersonAddressKey of the service address'
       houseKey:
         type: string
         description: 'Housekey of the address'
@@ -865,12 +872,31 @@ definitions:
       - postcode
     additionalProperties: false
     description: 'The service address contains the address data that is stored in the service order'
-  ServiceCoding:
+  ServiceCodingEnriched:
     type: object
     properties:
       serviceOrder:
         $ref: 'ServiceOrder'
-        description: 'Service order of the Recipient that has been processed.'
+        description: 'Service order that has been processed.'
+      manualForwardingType:
+        $ref: 'ManualForwardingType'
+        description: 'Indicates how the parcel is handled manually.'
+      returnReasonApplied:
+        $ref: 'ReturnReasonType'
+        description: 'Indicates the reason of a returned mailpiece. Needed if Return reason is changed on MCS'
+      processingState:
+        $ref: 'ProcessingStateType'
+        description: 'Indicates if the service order has been applied or not'
+    required:
+      - processingState
+    additionalProperties: false
+    description: 'The service coding indicates a service which is physically visible on a parcel. These services can be provided during automatic or manual processes (e.g. transfer label)'
+  ServiceCoding:
+    type: object
+    properties:
+      serviceOrderId:
+        type: string
+        description: 'Service order id that has been processed.'
       manualForwardingType:
         $ref: 'ManualForwardingType'
         description: 'Indicates how the parcel is handled manually.'
@@ -891,7 +917,9 @@ definitions:
       - STANDING_ORDER
       - TRANSFER_LABEL
       - MILITARY
-    description: "SINGLE_ORDER = order for a specific mailpiece (Empfänger-Einzelauftrag)\nSTANDING_ORDER = order for personaddresskey (Empfänger-Dauerauftrag)\nTRANSFER_LABEL = order for a transfer label case\nMILITARY = order for a military address"
+      - MANUAL_ORDER
+      - SENDER_SINGLE_ORDER
+    description: "SINGLE_ORDER = order for a specific mailpiece (Empfänger-Einzelauftrag)\nSTANDING_ORDER = order for personaddresskey (Empfänger-Dauerauftrag) permanent order\nTRANSFER_LABEL = order for a transfer label case\nMILITARY = order for a military address\nMANUAL_ORDER = order created at a manual coding station\nSENDER_SINGLE_ORDER = order for a specific mailpiece created by the sender"
   ServiceOrder:
     type: object
     properties:
@@ -904,13 +932,7 @@ definitions:
       serviceType:
         $ref: 'ServiceType'
         description: 'Type of the service. The type is needed to choose the right address label type.'
-      serviceSubType:
-        $ref: 'ServiceSubType'
-        description: 'The service types FORWARD and RETAIN have subtypes.'
-      personAddressKey:
-        type: string
-        description: 'The personAddressKey of the original recipient of the mailpiece'
-      recipientAddress:
+      serviceAddress:
         $ref: 'ServiceAddress'
         description: 'The new recipient address'
       chargingOption:
@@ -933,33 +955,28 @@ definitions:
       actionDate:
         $ref: 'DateTime'
         description: 'Date that needs to be printed on the label in the retain case'
+      deliveryLanguage:
+        $ref: 'Language'
+        description: 'Language of the distibution office that delivers the mailpiece to the service address. Used to print the address in the correct language.'
     required:
       - serviceOrderId
       - serviceOrderType
       - serviceType
       - chargingOption
+      - deliveryLanguage
     additionalProperties: false
     description: 'Data from the service order that is relevant for the coding system to do the service coding.'
-  ServiceSubType:
-    type: string
-    enum:
-      - FORWARD_ADDRESSEE
-      - FORWARD_LOCATION
-      - FORWARD_FROM_POBOX
-      - FORWARD_BLUE
-      - FORWARD_RED
-      - FORWARD_YELLOW
-      - RETAIN_DELIVERY
-      - RETAIN_PICKUP
-    description: "FORWARD_ADDRESSEE = forward mailpiece to a person (domicile address)\nFORWARD_LOCATION = forward mailpiece to a post office, pick post, MyPost24\nFORWARD_FROM_POBOX = forward mailpiece from pobox to domicile\nFORWARD_BLUE = Specific one of standing orders. The coding is not different, but information is needed in coding result.\nFORWARD_RED = Specific one of standing orders. The coding is not different, but information is needed in coding result.\nFORWARD_YELLOW = Specific one of standing orders. The coding is not different, but information is needed in coding result.\nRETAIN_DELIVERY = The mailpiece will be delivered after the storage period\nRETAIN_PICKUP = The mailpiece has to be picked up by the customer after the storage period"
   ServiceType:
     type: string
     enum:
       - FORWARD
-      - DELIVERY_DAY
+      - FORWARD_POBOX
+      - DELIVERY_SLOT
       - RETURN
-      - RETAIN
-    description: "FORWARD = forward mailpiece to another address\nDELIVERY_DAY = deliver mailpiece on a specific weekday / at a specific time window\nRETURN = the mailpiece has to returned to the sender\nRETAIN = the mailpiece has to retaind at the postoffice for a specific time"
+      - DELAYED_PICKUP
+      - DELAYED_DELIVERY
+      - INTERNATIONAL
+    description: "FORWARD = forward mailpiece to another address\nFORWARD_POBOX = forward mailpiece from a postbox to a domicile address\nDELIVERY_SLOT = deliver mailpiece on a specific weekday / at a specific time window\nRETURN = the mailpiece has to returned to the sender\nDELAYED_PICKUP = the mailpiece has to retaind at the postoffice for a specific time. After this time it must be picked up by the reciever.\nDELAYED_DELIVERY = the mailpiece has to retaind at the postoffice for a specific time. After this time it must be delivered to the receiver.\nINTERNATIONAL = the mailpiece must be directed an export office"
   SourceSystem:
     type: object
     properties:
