@@ -4,13 +4,13 @@ info:
   description: "API definitions for Coding Data\nThe Kafka topic exposes the FinalCodingData-Event, which is forwarded from the MQTT-Broker to kafka   \nThe MQTT topics define the interface between the coding system (Mail Match System incl. MCS) and SDDM\n"
   contact:
     name: gfellerle
-  version: 4.1.1
+  version: 4.2.0
 host: 'server:8080'
 basePath: 'Kafka, MQTT'
 paths:
   logistics.parcel.coding.final.Mailpiece-event:
     get:
-      summary: 'Kafka topic for sending coding data'
+      summary: 'Kafka topic for sending enriched coding data'
       description: 'All the related coding data of a specific coding workflow (e.g. OCR Addresscoding, VCS-coding, ...)'
       tags:
         - Kafka
@@ -18,13 +18,18 @@ paths:
         '200':
           description: 'Final coding data for other peripheral systems'
           schema: {type: array, $ref: 'FinalCodingEvent'}
-  'rc-ic/v1/coding/transmit-final-result/{srcSystem}/{srcInstance}/{dstSystem}/{dstInstance}/{conversationId}':
+  '/{locationKey}/rc-ic/v1/coding/transmit-final-result/{srcSystem}/{srcInstance}':
     post:
-      summary: 'MQTT topic for sending coding data'
+      summary: 'MQTT topic for sending coding data to the sorting system'
       description: 'All the related coding data of a specific coding workflow (e.g. OCR Addresscoding, VCS-coding, ...)'
       tags:
         - MQTT
       parameters:
+        -
+          name: locationKey
+          in: path
+          description: 'ONRP (Ordnungsnummer der Poststelle) of the sorting center'
+          type: string
         -
           name: srcSystem
           in: path
@@ -37,28 +42,10 @@ paths:
           description: 'two-digit padded number identifying the system instance issuing the message'
           type: string
           default: '01'
-        -
-          name: destSystem
-          in: path
-          description: '3-letter uppercase name identifying the system receiving the message'
-          type: string
-          default: SDDM
-        -
-          name: destInstance
-          in: path
-          description: 'two-digit padded number identifying the system instance receiving the message'
-          type: string
-          default: '01'
-        -
-          name: conversationId
-          in: path
-          description: 'ID to correlate the status with a request'
-          type: string
-          default: '12345'
       responses:
         default:
-          schema: {$ref: 'FinalCodingEvent'}
-  'rc-ic/v1/coding/submit-action/{srcSystem}/{srcInstance}/{dstSystem}/{dstInstance}/{conversationId}':
+          schema: {$ref: 'TransmitFinalResultEvent'}
+  '/{locationKey}/rc-ic/v1/coding/submit-action/{srcSystem}/{srcInstance}':
     post:
       summary: 'MQTT topic for coding instructions'
       description: 'Used by Sorting Systems to provide coding instructions (e.g. type of coding needed)'
@@ -66,6 +53,11 @@ paths:
         - MQTT
       parameters:
         -
+          name: locationKey
+          in: path
+          description: 'ONRP (Ordnungsnummer der Poststelle) of the sorting center'
+          type: string
+        -
           name: srcSystem
           in: path
           description: '3-letter uppercase name identifying the system issuing the message'
@@ -77,24 +69,6 @@ paths:
           description: 'two-digit padded number identifying the system instance issuing the message'
           type: string
           default: '01'
-        -
-          name: destSystem
-          in: path
-          description: '3-letter uppercase name identifying the system receiving the message'
-          type: string
-          default: SDDM
-        -
-          name: destInstance
-          in: path
-          description: 'two-digit padded number identifying the system instance receiving the message'
-          type: string
-          default: '01'
-        -
-          name: conversationId
-          in: path
-          description: 'ID to correlate the status with a request'
-          type: string
-          default: '12345'
       responses:
         default:
           schema: {$ref: 'SubmitActionEvent'}
@@ -102,7 +76,7 @@ definitions:
   Int:
     type: integer
     description: '<a href="https://swagger.io/docs/specification/data-models/data-types/#numbers">Number @asType integer</a>'
-  Address:
+  AddressEnriched:
     type: object
     properties:
       person:
@@ -142,15 +116,51 @@ definitions:
         description: 'Indicates state of a validated person living at a specific address'
     required:
       - sourceSystem
+      - masterDataKeys
+    additionalProperties: false
+    description: 'Address captured by an enrichment device or delivered by a preannouncement system'
+  AddressType:
+    type: string
+    enum:
+      - FORWARD_TO_DOMICILE
+      - FORWARD_TO_POBOX
+      - FORWARD_TO_POST_OFFICE
+      - FORWARD_TO_PICK_POST
+      - FORWARD_TO_MY_POST_24
+    description: "FORWARD_TO_DOMICILE = forward to domicile\nFORWARD_TO_POBOX = forward to pobox\nFORWARD_TO_POST_OFFICE = forward to postoffice\nFORWARD_TO_PICK_POST = forward to pickpost\nFORWARD_TO_MY_POST_24 = forward to mypost24"
+  Address:
+    type: object
+    properties:
+      personState:
+        $ref: 'PersonState'
+        description: 'Indicates state of a validated person'
+      personalizedAddressState:
+        $ref: 'PersonalizedAddressState'
+        description: 'Indicates state of a validated person living at a specific address'
+      deliveryPointType:
+        $ref: 'DeliveryPointType'
+        description: 'Delivery point of an address'
+      deliveryPointState:
+        $ref: 'DeliveryPointState'
+        description: 'Indicates state of a validated delivery point'
+      masterDataKeys:
+        $ref: 'MasterDataKeys'
+        description: 'All validated keys related to the read address elements'
+    required:
+      - personState
+      - personalizedAddressState
+      - deliveryPointType
+      - deliveryPointState
+      - masterDataKeys
     additionalProperties: false
     description: 'Address captured by an enrichment device or delivered by a preannouncement system'
   ChargingType:
     type: string
     enum:
-      - FREE
       - CHARGEABLE
+      - FREE
       - CHARGEABLE_BILL
-      - PAID_BY_SENDER
+    description: "CHARGEABLE = kostenpflichtig (Taxe muss berechnet werden)\nFREE = kostenlos (\"Taxfrei\" auf Etikette)\nCHARGEABLE_BILL = kostenpflichtig auf Rechnung (Hinweis auf Etikette)"
   CodingDepth:
     type: string
     enum:
@@ -160,16 +170,86 @@ definitions:
       - DELIVERY_POINT
       - RECEIVER
     description: "ADAPTIVE = Coding as deep as needed (default)\nCOUNTRY = Only Country information is relevant for Sorting\nPOSTCODE = Only Postcode information is relevant for Sorting\nDELIVERY_POINT = Only DeliveryPoint is relevant for Sorting\nRECEIVER = Receiver is needed for Sorting"
+  DateTime:
+    type: string
+    description: "<a href=\"https://swagger.io/docs/specification/data-models/data-types/#string\">String @format date-time</a>,\nas defined by <a href=\"https://tools.ietf.org/html/rfc3339#section-5.6\">RFC 3339, section 5.6</a>,\nfor example: <code>2014-05-22T10:42:42.542+00:00</code>."
+    format: date-time
+  CodingEnriched:
+    type: object
+    properties:
+      address:
+        $ref: 'AddressEnriched'
+        description: 'Contains information regarding the address located on a mailpiece or transfered by a preannouncement system'
+      products:
+        type: array
+        items:
+          $ref: 'ProductEnriched'
+        description: 'Contains validated products, physically located on a mailpiece or transfered by a preannouncement system'
+      informationCarriers:
+        type: array
+        items:
+          $ref: 'InformationCarrierEnriched'
+        description: 'Information which were physically present on the parcel (e.g. barcodes)'
+      serviceCoding:
+        $ref: 'ServiceCodingEnriched'
+        description: 'Contains service related information which is visible on a parcel'
+      sourceSystem:
+        $ref: 'SourceSystem'
+        description: 'The system which publishes the event'
+      images:
+        type: array
+        items:
+          $ref: 'Image'
+        description: 'The images captured during coding'
+      workflowInformation:
+        $ref: 'WorkflowInformationEnriched'
+        description: 'Detailed insights in the internal workflow steps which occured to deliver the information in this event'
+    required:
+      - sourceSystem
+    additionalProperties: false
+    description: 'Information captured by the coding systems during coding'
   CodingInstruction:
     type: string
     enum:
       - ADDRESS_CODING
       - SERVICE_CODING
     description: "ADDRESS_CODING   The coding system needs to trigger an address coding workflow (including barcode coding)\nSERVICE_CODING   The coding system needs to trigger a service coding workflow"
-  DateTime:
+  CodingReason:
     type: string
-    description: "<a href=\"https://swagger.io/docs/specification/data-models/data-types/#string\">String @format date-time</a>,\nas defined by <a href=\"https://tools.ietf.org/html/rfc3339#section-5.6\">RFC 3339, section 5.6</a>,\nfor example: <code>2014-05-22T10:42:42.542+00:00</code>."
-    format: date-time
+    enum:
+      - SRR_MULTIPLE_PARCEL
+      - SRR_NO_IMAGE
+      - SRR_POOR_IMAGE_QUALITY
+      - SRR_POOR_IMAGE_CONTRAST
+      - SRR_POOR_ADR_PRINT_QUALITY
+      - SRR_FAILING_MAIN_IMAGE
+      - SRR_AMBIGUOUS_ADDR_BLOCK
+      - SRR_NO_ADDRESS_ON_IMAGE
+      - SRR_UNREADABLE_WRITTEN_ADDRESS
+      - SRR_NO_POSTCODE_OR_CITY
+      - SRR_FAILING_IMAGE
+      - SRR_TRUNCATED_MAIN_IMAGE
+      - SRR_UNCOMPLETE_ADDRESS_ON_IMAGE
+      - SRR_CORRECTED_CITY
+      - SRR_CORRECTED_STREET
+      - SRR_CORRECTED_HOUSE_NR
+      - SRR_AMBIGUOUS_ADRESSEE
+      - SRR_AMBIGUOUS_ADDRESSED_ADRESSEE
+      - SRR_ALTERNATIVE_PC_LOCALITY
+      - SVC_NO_ADDRESS_ON_IMAGE
+      - SVC_UNREADABLE_WRITTEN_ADDRESS
+      - SVC_AMBIGUOUS_ADDR_BLOCK
+      - SVC_POOR_IMAGE_QUALITY
+      - SVC_POOR_ADR_PRINT_QUALITY
+      - SVC_NO_POSTCODE_OR_CITY
+      - SVC_UNCOMPLETE_ADDRESS_ON_IMAGE
+      - SVC_AMBIGUOUS_ADRESSEE
+      - SVC_AMBIGUOUS_ADDRESSED_ADRESSEE
+      - SVC_ALTERNATIVE_PC_LOCALITY
+      - SVC_INVALID_CAPTURED_ADDRESS
+      - SMC_NO_ADDRESS_ON_PARCEL
+      - SMC_INVALID_CAPTURED_ADDRESS
+    description: "SRR_MULTIPLE_PARCEL = MMS stellt nicht eindeutig identifizierbare Pakete fest\nSRR_NO_IMAGE = Bilder sind schwarz, zu dunkel oder weiss / keine Infos sind ersichtlich: Technisches Problem. Die Bildqualität lässt ein Lesen der Adresse nicht zu.\nSRR_POOR_IMAGE_QUALITY = Ungenügende Bildqualität, DPI Auflösung. Die Bildqualität lässt ein Lesen der Adresse nicht zu.\nSRR_POOR_IMAGE_CONTRAST = Ungenügende Bildqualität, ungenügender Kontrast. Die Bildqualität lässt ein Lesen der Adresse nicht zu.\nSRR_POOR_ADR_PRINT_QUALITY = Ungenügende Adressdruckqualität\nSRR_FAILING_MAIN_IMAGE = DWS liefert nur begrenzte Anzahl Bilder, Empfängeradresse nicht ersichtlich\nSRR_AMBIGUOUS_ADDR_BLOCK = Mehrere erkannten Empfängeradressen auf Paket, mehrere Trigger weisen auf mehrere unterschiedliche Empfänger zu. Die Empfängeradresse ist unklar.\nSRR_NO_ADDRESS_ON_IMAGE = Auf dem Bild ist keine Adresse zu finden.\nSRR_UNREADABLE_WRITTEN_ADDRESS = Die Adresse ist unleserlich geschrieben.\nSRR_NO_POSTCODE_OR_CITY = Empfängeradresse ist nicht vollständig / PLZ / Ort / Land fehlt usw - kein Einstiegspunkt\nSRR_FAILING_IMAGE = DWS liefert nur begrenzte Anzahl Bilder an MMS, Empfängeradresse ersichtlich\nSRR_TRUNCATED_MAIN_IMAGE = Ein Teil des Hauptbilds fehlt, SendungsID und Empfängeradresse ersichtlich\nSRR_UNREADABLE_WRITTEN_ADDRESS = Adressteile fehlen auf Bild. Es kann trotzdem teilweise codiert werden.\nSRR_CORRECTED_CITY = Der Ort wurde basierend auf den Stammdaten.und andere validierte Elemente korrigiert.\nSRR_CORRECTED_STREET = Die Strassename wurde basierend auf den Stammdaten.und andere validierte Elemente korrigiert\nSRR_CORRECTED_HOUSE_NR = Die Hausnummer oder der Hausnummerzusatz wurde basierend auf den Stammdaten.und andere validierte Elemente korrigiert.\nSRR_AMBIGUOUS_ADRESSEE = Empfänger mehrfach oder nicht eindeutig in den Stammdaten Dublette(n) in KDP.\nSRR_AMBIGUOUS_ADDRESSED_ADRESSEE = Mehrere mögliche KDP_IDs an derselben Adresse (z.B. Famile).\nSRR_ALTERNATIVE_PC_LOCALITY = MMS sendet diesen Code, wenn der AMPKey oder Hauskey via alternative PLZ/Ort gefunden und codiert wurde.\nSVC_NO_ADDRESS_ON_IMAGE = Auf dem Bild ist keine Adresse zu finden. Eventuell automatisch generiert, wann die Videocodierung eine neu ROI Codierung beauftragt.\nSVC_UNREADABLE_WRITTEN_ADDRESS = Die Adresse ist unleserlich geschrieben.\nSVC_AMBIGUOUS_ADDR_BLOCK = Mehrere erkannten Empfängeradressen auf Paket, mehrere Trigger weisen auf mehrere unterschiedliche Empfänger zu. Die Empfängeradresse ist unklar.\nSVC_POOR_IMAGE_QUALITY = Ungenügende Bildqualität, DPI Auflösung. Die Bildqualität lässt ein Lesen der Adresse nicht zu.\nSVC_POOR_ADR_PRINT_QUALITY = Ungenügende Adressdruckqualität\nSVC_NO_POSTCODE_OR_CITY = Empfängeradresse ist nicht vollständig / PLZ / Ort / Land fehlt usw - kein Einstiegspunkt\nSVC_UNCOMPLETE_ADDRESS_ON_IMAGE = Adressteile fehlen auf Bild. Es kann trotzdem teilweise codiert werden.\nSVC_AMBIGUOUS_ADRESSEE = Empfänger mehrfach oder nicht eindeutig in den Stammdaten Dublette(n) in KDP.\nSVC_AMBIGUOUS_ADDRESSED_ADRESSEE = Mehrere mögliche KDP_IDs an derselben Adresse (z.B. Famile).\nSVC_ALTERNATIVE_PC_LOCALITY = MMS VCS sendet diesen Code, wenn der AMPKey oder Hauskey via alternative PLZ/Ort gefunden und codiert wurde.\nSVC_INVALID_CAPTURED_ADDRESS = Erfasste Paketadresse weist Unterschiede zu den Stammdaten auf.\nSMC_NO_ADDRESS_ON_PARCEL = Keine Adresse vorhanden auf dem Paket\nSMC_INVALID_CAPTURED_ADDRESS = Erfasste Paketadresse weist Unterschiede zu den Stammdaten auf."
   Coding:
     type: object
     properties:
@@ -192,11 +272,6 @@ definitions:
       sourceSystem:
         $ref: 'SourceSystem'
         description: 'The system which publishes the event'
-      images:
-        type: array
-        items:
-          $ref: 'Image'
-        description: 'The images captured during coding'
       workflowInformation:
         $ref: 'WorkflowInformation'
         description: 'Detailed insights in the internal workflow steps which occured to deliver the information in this event'
@@ -204,6 +279,15 @@ definitions:
       - sourceSystem
     additionalProperties: false
     description: 'Information captured by the coding systems during coding'
+  Day:
+    type: string
+    enum:
+      - MONDAY
+      - TUESDAY
+      - WEDNESDAY
+      - THURSDAY
+      - FRIDAY
+      - SATURDAY
   DeliveryPointState:
     type: string
     enum:
@@ -257,6 +341,17 @@ definitions:
       - state
     additionalProperties: false
     description: 'Information related to the delivery point of a recipient'
+  DeliverySlot:
+    type: object
+    properties:
+      dayOfTheWeek:
+        $ref: 'Day'
+        description: 'Day of the week when the mailpiece should be delivered. Only available in case of serviceType = DELIVERY_SLOT'
+      timeWindow:
+        $ref: 'TimeWindow'
+        description: 'Time window when the mailpiece should be delivered. Only available in case of serviceType = DELIVERY_SLOT'
+    additionalProperties: false
+    description: 'Information about the desired delivery day and time of the customer'
   DetectedElements:
     type: string
     enum:
@@ -325,7 +420,7 @@ definitions:
         $ref: 'DateTime'
         description: 'Time when the event is published'
       coding:
-        $ref: 'Coding'
+        $ref: 'CodingEnriched'
         description: "Data captured during a workflow in the coding system\nThis may contain aggregated data from multiple enrichment steps"
     required:
       - codingId
@@ -413,7 +508,7 @@ definitions:
       - face
     additionalProperties: false
     description: 'Image information used by coding system'
-  InformationCarrier:
+  InformationCarrierEnriched:
     type: object
     properties:
       symbology:
@@ -435,7 +530,20 @@ definitions:
     required:
       - symbology
       - value
-      - sourceSystem
+    additionalProperties: false
+    description: 'Identified and captured information carrier (e.g. barcodes, logos)'
+  InformationCarrier:
+    type: object
+    properties:
+      symbology:
+        $ref: 'Symbology'
+        description: 'Symbology of an information carrier'
+      value:
+        type: string
+        description: 'Value of an information carrier'
+    required:
+      - symbology
+      - value
     additionalProperties: false
     description: 'Identified and captured information carrier (e.g. barcodes, logos)'
   KeyWithConfidence:
@@ -462,6 +570,14 @@ definitions:
       - confidence
     additionalProperties: false
     description: 'Key with confidence base on validation'
+  Language:
+    type: string
+    enum:
+      - GERMAN
+      - FRENCH
+      - ITALIAN
+      - ENGLISH
+    description: Language
   LegalForm:
     type: string
     enum:
@@ -519,6 +635,14 @@ definitions:
         maxLength: 2
     additionalProperties: false
     description: 'Information related to the locality of an address'
+  ManualForwardingType:
+    type: string
+    enum:
+      - FORWARDING
+      - RETURN_SHIPMENT
+      - MISCARRIAGE
+      - AFTER_TREATMENT
+    description: "FORWARDING = NachsendungNSP Wenn in einer späteren Phase zu einer RS-Adresse die NS-Abklärung durchgeführt wird und daraus eine NS würde, wird hier NS angegeben\nRETURN_SHIPMENT = RuecksendungNSP Wenn aus der NS eine RS wurde, wird hier RS angegeben. Bsp. PPR (PostPac Promo): PPR werden nie nachgesendet. Infos zu DL sind für Nachforschungszwecke trotzdem ausgefüllt\nMISCARRIAGE = FehlleitungNSP\nAFTER_TREATMENT = Zur Nachbehandlung Informationen zur RS/NS (falls vorhanden) werden ausgefüllt. Der Verarbeitungsstatus wird auf OK gesetzt"
   MasterDataKeys:
     type: object
     properties:
@@ -551,6 +675,15 @@ definitions:
         description: 'MLZ physically located on the mailpiece (read by the coding system)'
     additionalProperties: false
     description: 'Resolved address keys'
+  PaymentMethod:
+    type: string
+    enum:
+      - UNKNOWN
+      - AUTOMATIC
+      - AT_DELIVERY
+      - PAID_BY_SENDER
+      - TAX_FREE
+    description: "AUTOMATIC = The tax is invoiced automatically (Abrechnung via Pve)\nPAID_BY_SENDER = The tax is paid by the sender\nAT_DELIVERY = The tax has to be paid at delivery. Franking Value will be printed on the address label\nTAX_FREE = 0.00 will be printed on the address label"
   PersonState:
     type: string
     enum:
@@ -626,10 +759,9 @@ definitions:
     enum:
       - OK
       - NO_FORWARDING
-      - INVALID_PAYMENT_TYPE
       - MANUAL_FORWARDING
-    description: "OK = 1 = Ok\nNO_FORWARDING = 2 = Keine NS/RS\nINVALID_PAYMENT_TYPE = 3 = Ungültige Bezahlart\nMANUAL_FORWARDING = 4 = Manuelle Nachsendung (Kein NSA gefunden, aber auf Transferetikette hat Bote NS-Adresse ausgefüllt)\n\nStatus 2 wird gesetzt, wenn der Typist eine NS- oder RS-Behandlung abbricht und auf die Paketadresse codiert.\nSomit können diese Fälle zu normalen MCS-Fälle unterschieden werden.\nD.h. Informationsart NS oder RS und die weiteren Felder werden beibehalten, aber der Status unterscheidet sich."
-  Product:
+    description: "OK = Ok\nNO_FORWARDING = Keine NS/RS. Wenn der Codierer eine NS- oder RS-Behandlung abbricht und auf die Paketadresse codiert.\nMANUAL_FORWARDING = Manuelle Nachsendung (Kein NSA gefunden, aber auf Transferetikette hat Bote NS-Adresse ausgefüllt)"
+  ProductEnriched:
     type: object
     properties:
       code:
@@ -643,20 +775,21 @@ definitions:
         description: "Source system which captured the product\nPossible sources:\nPREANNOUNCEMENT Coding data delivered by a preannouncement from customer\nAUTOMATIC_CODING\tAutomatic coding system using optical character recognition\nMANUAL_CODING_REJECT\tManual coding station\nMANUAL_CODING_LIGHT\tManual coding by a a portable scanner\nMANUAL_CODING_BULK\tManual bulk coding station"
     required:
       - code
-      - sourceSystem
     additionalProperties: false
     description: 'Identified and validated product (old PRZL, "Zusatzleistung")'
-  RejectType:
-    type: string
-    enum:
-      - VCS_REJECT
-      - OCR_REJECT
-    description: "VCS_REJECT   Rejected by a VCS coder\nOCR_REJECT   Rejected by OCR"
-  RetainActionType:
-    type: string
-    enum:
-      - DELIVERY
-      - PICKUP
+  Product:
+    type: object
+    properties:
+      code:
+        type: string
+        description: 'Validated product code (e.g. 509)'
+      shortName:
+        type: string
+        description: 'Shortname of validated product (e.g. PRI)'
+    required:
+      - code
+    additionalProperties: false
+    description: 'Identified and validated product (old PRZL, "Zusatzleistung")'
   ReturnReasonType:
     type: string
     enum:
@@ -686,112 +819,164 @@ definitions:
   ServiceAddress:
     type: object
     properties:
+      type:
+        $ref: 'AddressType'
+        description: 'Type of Address'
+      company:
+        type: string
+        description: 'Company name of the addressee'
+      salutation:
+        type: string
+        description: 'Salutation of the addressee'
+      firstName:
+        type: string
+        description: 'Firstname of the addressee'
+      lastName:
+        type: string
+        description: 'Lastname of the addressee'
+      additionalAddressLine:
+        type: string
+        description: 'Additional address line of the addressee'
+      customerNumber:
+        type: string
+        description: 'Pickpost or MyPost24 number. Only available if type is FORWARD_TO_PICK_POST or FORWARD_TO_MY_POST_24'
+      street:
+        type: string
+        description: 'Street of the address'
+      houseNumber:
+        type: string
+        description: 'Housenumber of the address'
+      pobox:
+        type: string
+        description: 'Post office box'
+      postcode:
+        type: string
+        description: 'Postcode of the address'
+      city:
+        type: string
+        description: 'City of the address'
       personAddressKey:
         type: string
-        description: 'Identifies a person at a domiclie address (unique)'
-      addressLines:
-        type: array
-        items:
-          type: string
-        description: 'addressLines for a specific service'
+        description: 'PersonAddressKey of the service address'
+      houseKey:
+        type: string
+        description: 'Housekey of the address'
+      streetKey:
+        type: string
+        description: 'Streetkey of the address'
     required:
-      - personAddressKey
-      - addressLines
+      - type
+      - firstName
+      - lastName
+      - street
+      - postcode
+    additionalProperties: false
+    description: 'The service address contains the address data that is stored in the service order'
+  ServiceCodingEnriched:
+    type: object
+    properties:
+      serviceOrder:
+        $ref: 'ServiceOrder'
+        description: 'Service order that has been processed.'
+      manualForwardingType:
+        $ref: 'ManualForwardingType'
+        description: 'Indicates how the parcel is handled manually.'
+      returnReasonApplied:
+        $ref: 'ReturnReasonType'
+        description: 'Indicates the reason of a returned mailpiece. Needed if Return reason is changed on MCS'
+      processingState:
+        $ref: 'ProcessingStateType'
+        description: 'Indicates if the service order has been applied or not'
+    required:
+      - processingState
     additionalProperties: false
     description: 'The service coding indicates a service which is physically visible on a parcel. These services can be provided during automatic or manual processes (e.g. transfer label)'
   ServiceCoding:
     type: object
     properties:
-      serviceId:
+      serviceOrderId:
         type: string
-        description: 'Id of a service order'
-      serviceOrder:
-        $ref: 'ServiceOrder'
-        description: 'Indicates the type of the service order'
-      returnReason:
+        description: 'Service order id that has been processed.'
+      manualForwardingType:
+        $ref: 'ManualForwardingType'
+        description: 'Indicates how the parcel is handled manually.'
+      returnReasonApplied:
         $ref: 'ReturnReasonType'
-        description: 'Indicates the reason of a returned mailpiece'
+        description: 'Indicates the reason of a returned mailpiece. Needed if Return reason is changed on MCS'
       processingState:
         $ref: 'ProcessingStateType'
-        description: 'Indicates the processing state of a mailpiece (e.g. why the mailpiece has not been processed)'
-      applied:
-        type: boolean
-        description: 'Indicates if a provided service has been applied for a specific mailpiece'
-      sourceSystem:
-        $ref: 'SourceSystem'
-        description: 'The system which delivers the service information (physically located on the mailpiece or applied by coder)'
+        description: 'Indicates if the service order has been applied or not'
+    required:
+      - processingState
     additionalProperties: false
     description: 'The service coding indicates a service which is physically visible on a parcel. These services can be provided during automatic or manual processes (e.g. transfer label)'
-  ServiceInformation:
+  ServiceOrderType:
+    type: string
+    enum:
+      - SINGLE_ORDER
+      - PERMANENT_ORDER
+      - TRANSFER_LABEL
+      - MILITARY
+      - MANUAL_ORDER
+      - SENDER_SINGLE_ORDER
+    description: "SINGLE_ORDER = order for a specific mailpiece (Empfänger-Einzelauftrag)\nPERMANENT_ORDER = order for personaddresskey (Empfänger-Dauerauftrag)\nTRANSFER_LABEL = order for a transfer label case\nMILITARY = order for a military address\nMANUAL_ORDER = order created at a manual coding station\nSENDER_SINGLE_ORDER = order for a specific mailpiece created by the sender"
+  ServiceOrder:
     type: object
     properties:
+      serviceOrderId:
+        type: string
+        description: 'Id of the service order from the source system'
+      serviceOrderType:
+        $ref: 'ServiceOrderType'
+        description: 'Type of the service order. Indicates if it''s an order for a single mailpiece or if it''s an order for an address (personaddresskey)'
       serviceType:
         $ref: 'ServiceType'
-        description: 'Type of the service'
+        description: 'Type of the service. The type is needed to choose the right address label type.'
       serviceAddress:
         $ref: 'ServiceAddress'
-        description: 'Service address (forwarding or return address)'
-      taxAmount:
-        type: number
-        description: 'tax amount in CHF'
-      chargingType:
+        description: 'The new recipient address'
+      chargingOption:
         $ref: 'ChargingType'
-        description: 'Charging type of the service'
-      serviceCodes:
+        description: 'Indicates if the service is chargeable or not. If it''s chargable the field taxInformation contains the tax to be printed on the address label.'
+      taxInformation:
+        $ref: 'TaxInformation'
+        description: 'The tax information for the service. If a franking value is available, this information has to be printed on the address label.'
+      productCodes:
         type: array
         items:
           type: string
-        description: 'Service codes (Products) that needs to be printed on the label'
+        description: 'Product codes (PRZL) that needs to be printed on the label'
+      deliverySlot:
+        $ref: 'DeliverySlot'
+        description: 'Detailed information about the service type DELIVERY_SLOT'
       returnReason:
         $ref: 'ReturnReasonType'
-        description: 'Reason why parcel is returned'
-      retainActionDate:
+        description: 'Indicates the reason of a returned mailpiece'
+      actionDate:
         $ref: 'DateTime'
         description: 'Date that needs to be printed on the label in the retain case'
-      retainActionType:
-        $ref: 'RetainActionType'
-        description: 'Action type that needs to be printed on the label in the retain case'
+      deliveryLanguage:
+        $ref: 'Language'
+        description: 'Language of the distibution office that delivers the mailpiece to the service address. Used to print the address in the correct language.'
     required:
+      - serviceOrderId
+      - serviceOrderType
       - serviceType
+      - chargingOption
+      - deliveryLanguage
     additionalProperties: false
-    description: 'The service information delivered after the service lookup by sorting systems.'
-  ServiceOrder:
-    type: string
-    enum:
-      - FORWARDING
-      - RETURN_SHIPMENT
-      - MISCARRIAGE
-      - AFTER_TREATMENT
-    description: "FORWARDING = 1 = NachsendungNSP Wenn in einer späteren Phase zu einer RS-Adresse die NS-Abklärung durchgeführt wird und daraus eine NS würde, wird hier NS angegeben\nRETURN_SHIPMENT = 2 = RuecksendungNSP Wenn aus der NS eine RS wurde, wird hier RS angegeben. Bsp. PPR (PostPac Promo): PPR werden nie nachgesendet. Infos zu DL sind für Nachforschungszwecke trotzdem ausgefüllt\nMISCARRIAGE = 3 = FehlleitungNSP\nAFTER_TREATMENT = 4 = Zur Nachbehandlung Informationen zur RS/NS (falls vorhanden) werden ausgefüllt. Der Verarbeitungsstatus wird auf OK gesetzt"
+    description: 'Data from the service order that is relevant for the coding system to do the service coding.'
   ServiceType:
     type: string
     enum:
-      - FORWARDING
+      - FORWARD
+      - FORWARD_POBOX
+      - DELIVERY_SLOT
       - RETURN
-      - RETAIN
-      - DELIVERY_DAY
-      - DELIVERY_TIME
-  SourceSystemSorting:
-    type: object
-    properties:
-      systemName:
-        type: string
-        description: 'Device which provided the information'
-      instance:
-        type: string
-        description: 'Instance of the device'
-      locationKey:
-        type: string
-        description: 'Unique identifier of the sorting center (ONRP).'
-        maxLength: 200
-      type:
-        $ref: 'SystemTypeSorting'
-        description: 'Indicates the type of the system'
-    required:
-      - systemName
-      - instance
-      - type
-    additionalProperties: false
+      - DELAYED_PICKUP
+      - DELAYED_DELIVERY
+      - INTERNATIONAL
+    description: "FORWARD = forward mailpiece to another address\nFORWARD_POBOX = forward mailpiece from a postbox to a domicile address\nDELIVERY_SLOT = deliver mailpiece on a specific weekday / at a specific time window\nRETURN = the mailpiece has to returned to the sender\nDELAYED_PICKUP = the mailpiece has to retaind at the postoffice for a specific time. After this time it must be picked up by the reciever.\nDELAYED_DELIVERY = the mailpiece has to retaind at the postoffice for a specific time. After this time it must be delivered to the receiver.\nINTERNATIONAL = the mailpiece must be directed an export office"
   SourceSystem:
     type: object
     properties:
@@ -805,18 +990,18 @@ definitions:
         type: string
         description: 'Unique identifier of the sorting center (ONRP).'
         maxLength: 200
-      type:
-        $ref: 'SystemTypeCoding'
-        description: 'Indicates the type of the system'
     required:
       - systemName
       - instance
       - locationKey
-      - type
     additionalProperties: false
   SubmitActionEvent:
     type: object
     properties:
+      submitActionId:
+        type: string
+        description: "Unique identifier of a submitAction message\nPrimary key 🔑"
+        maxLength: 200
       processingItemId:
         type: string
         description: 'machine specific id to identify the mailpiece during a sorting process'
@@ -827,22 +1012,23 @@ definitions:
       timestamp:
         $ref: 'DateTime'
         description: 'Time when the event occured'
-      instruction:
+      codingInstruction:
         $ref: 'CodingInstruction'
-        description: 'The type of coding requested by SDDM'
+        description: 'The type of coding requested by sorting system'
       codingDepth:
         $ref: 'CodingDepth'
-      sourceSystem:
-        $ref: 'SourceSystemSorting'
-        description: 'Sorting system which requested a coding'
+        description: 'Required coding depth of the sorting system. Relevant in case of codingInstruction = ADDRESS_CODING'
       serviceInformation:
-        $ref: 'ServiceInformation'
-        description: 'Related service information (case SERVICE_CODING)'
+        $ref: 'ServiceOrder'
+        description: 'Service information that is needed for the service coding (case codingInstruction = SERVICE_CODING)'
+      sourceSystem:
+        $ref: 'SourceSystem'
+        description: 'Sorting system which requested the coding'
     required:
+      - submitActionId
       - processingItemId
       - timestamp
-      - instruction
-      - codingDepth
+      - codingInstruction
       - sourceSystem
     additionalProperties: false
   Symbology:
@@ -890,12 +1076,53 @@ definitions:
       - ADDRESS_VALIDATION_AUTOMATIC
       - ADDRESS_VALIDATION_HUMAN_SUPPORT
     description: "IMAGE_PREPROCESSOR Device which handles image formatting and converting\nIMAGE_CONTROLLER Device which is responsible for the internal enrichment workflow of the coding systems (PieceManager)\nPREANNOUNCEMENT  Device which validates and publishes preannouncement data (Preannouncement processor)\nOCR_ROI_DETECTION    Device which detects ROI elements on an image (e.g. recipient address, barcode, ...)\nOCR_BARCODE  Device which reads / captures barcodes on an image\nOCR_ADDRESS  Device which reads address elements on an image\nVCS_INTERNAL_ROI Device VCS Offshore: Task in the video coding system where the coder detects address ROI elements on an image\nVCS_INTERNAL_PLZ Device VCS Offshore: Task in the video coding system where the coder enters the postcode based on an address ROI image\nVCS_INTERNAL_ADDRESS Device VCS Offshore: Task in the video coding system where the coder enters the recipient address based on an address ROI image\nVCS_EXTERNAL_ROI Device VCS Offshore: Task in the video coding system where the coder detects address ROI elements on an image\nVCS_EXTERNAL_PLZ Device VCS Offshore: Task in the video coding system where the coder enters the postcode based on an address ROI image\nVCS_EXTERNAL_ADDRESS Device VCS Offshore: Task in the video coding system where the coder enters the recipient address based on an address ROI image\nOCR_RETRY_BARCODE    Device which reads / captures barcodes on an image in a following workflow (e.g. after VCS ROI or VCS PLZ)\nOCR_RETRY_ADDRESS    Device which reads address elements on an image in a following workflow (e.g. after VCS ROI or VCS PLZ)\nMANUAL_CODING_REJECT Device where a coder manually captures barcodes and enters address information\nMANUAL_CODING_LIGHT Device where barcodes barcodes, products and the weight is captured (manual or partially automated)\nMANUAL_CODING_BULK   Device where barcodes, weight and dimensions and address information for bulky goods are captured or entered (manual or partially automated)\nMANUAL_CODING_BULK_AUTOMATIC Device where a coder manually captures barcodes and other specific information for bulky goods\nMANUAL_CODING_FLAT_BUNDLE Device where a coder manually captures postcodes for flat bundles\nADDRESS_VALIDATION_AUTOMATIC Device which validates an address in an automated enrichment workflow step (e.g. ocr address)\nADDRESS_VALIDATION_HUMAN_SUPPORT Device which validates an address in an enrichment workflow where a human is involved - as a support of the coder (e.g. MCS or VCS)"
-  SystemTypeSorting:
+  TaxInformation:
+    type: object
+    properties:
+      frankingValue:
+        type: number
+        description: 'The Tax of this service in CHF. This Value is printed on the address label.'
+      paymentMethod:
+        $ref: 'PaymentMethod'
+        description: 'Payment method of the service order. The remark on the address label depends on this value'
+    required:
+      - paymentMethod
+    additionalProperties: false
+    description: 'Tax information for a service'
+  TimeWindow:
     type: string
     enum:
-      - UNKNOWN
-      - SENDING_DATA_DECISION_MANAGEMENT
-  WorkflowInformation:
+      - REGULAR
+      - EARLY
+      - EVENING
+  TransmitFinalResultEvent:
+    type: object
+    properties:
+      codingId:
+        type: string
+        description: "Unique identifier of a coding message\nPrimary key 🔑"
+        maxLength: 200
+      processingItemId:
+        type: string
+        description: 'Id to identify the mailpiece during a sorting process'
+        maxLength: 32
+      idTags:
+        $ref: 'IdentifierTags'
+        description: 'Contains a list of ids identifying the processing item.'
+      timestamp:
+        $ref: 'DateTime'
+        description: 'Time when the event is published'
+      coding:
+        $ref: 'Coding'
+        description: "Data captured during a workflow in the coding system\nThis may contain aggregated data from multiple enrichment steps"
+    required:
+      - codingId
+      - processingItemId
+      - timestamp
+      - coding
+    additionalProperties: false
+    description: 'transmit-final-result event'
+  WorkflowInformationEnriched:
     type: object
     properties:
       enrichmentSteps:
@@ -906,16 +1133,29 @@ definitions:
       nextEnrichmentStep:
         $ref: 'EnrichmentStep'
         description: 'Indicates the next possible internal enrichment workflow step'
-      maxCodingLevelAchieved:
+      maxImageBasedCodingReached:
         type: boolean
-        description: 'Indicates if the maximal possible coding quality is achieved'
-      rejectType:
-        $ref: 'RejectType'
-        description: "Describes the type of the rejection\nIn some cases an enrichment workflow can be rejected"
-      rejectReason:
-        type: string
-        description: "Reason of rejection\ne.g.\nif there is no address ROI in VCS\nif there is military address on a mailpiece in VCS\nif all the images are empty in OCR or image preprocessing"
+        description: 'Indicates if more image based coding is possible'
+      codingReason:
+        type: array
+        items:
+          $ref: 'CodingReason'
+        description: 'Coding reasons that may happen during coding. They can be discharged as special sorts by the sorting system.'
     required:
       - enrichmentSteps
-      - maxCodingLevelAchieved
+      - maxImageBasedCodingReached
+    additionalProperties: false
+  WorkflowInformation:
+    type: object
+    properties:
+      maxImageBasedCodingReached:
+        type: boolean
+        description: 'Indicates if more image based coding is possible'
+      codingReason:
+        type: array
+        items:
+          $ref: 'CodingReason'
+        description: 'Coding reasons that may happen during coding. They can be discharged as special sorts by the sorting system.'
+    required:
+      - maxImageBasedCodingReached
     additionalProperties: false
