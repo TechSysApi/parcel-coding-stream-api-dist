@@ -4,7 +4,7 @@ info:
   description: "API definitions for Coding Data\nThe Kafka topic exposes the FinalCodingData-Event, which is forwarded from the MQTT-Broker to kafka   \nThe MQTT topics define the interface between the coding system (Mail Match System incl. MCS) and SDDM\n"
   contact:
     name: gfellerle
-  version: 4.2.0
+  version: 5.0.0-feature-coding-instruction-transfer-label.1
 host: 'server:8080'
 basePath: 'Kafka, MQTT'
 paths:
@@ -213,7 +213,8 @@ definitions:
     enum:
       - ADDRESS_CODING
       - SERVICE_CODING
-    description: "ADDRESS_CODING   The coding system needs to trigger an address coding workflow (including barcode coding)\nSERVICE_CODING   The coding system needs to trigger a service coding workflow"
+      - TRANSFER_CODING
+    description: "ADDRESS_CODING   The coding system needs to trigger an address coding workflow (including barcode coding)\nSERVICE_CODING   The coding system needs to trigger a service coding workflow\nTRANSFER_CODING  The coding system needs to trigger a transfer label coding workflow"
   CodingReason:
     type: string
     enum:
@@ -1011,7 +1012,7 @@ definitions:
         description: 'Optional list of Ids that identifies a mailpiece in a specific context'
       timestamp:
         $ref: 'DateTime'
-        description: 'Time when the event occured'
+        description: 'Time when the event occurred'
       codingInstruction:
         $ref: 'CodingInstruction'
         description: 'The type of coding requested by sorting system'
@@ -1112,6 +1113,9 @@ definitions:
       timestamp:
         $ref: 'DateTime'
         description: 'Time when the event is published'
+      codingInstruction:
+        $ref: 'CodingInstruction'
+        description: 'The type of coding requested by sorting system'
       coding:
         $ref: 'Coding'
         description: "Data captured during a workflow in the coding system\nThis may contain aggregated data from multiple enrichment steps"
@@ -1119,6 +1123,7 @@ definitions:
       - codingId
       - processingItemId
       - timestamp
+      - codingInstruction
       - coding
     additionalProperties: false
     description: 'transmit-final-result event'
