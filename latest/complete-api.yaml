@@ -4,7 +4,7 @@ info:
   description: "API definitions for Coding Data\nThe Kafka topic exposes the FinalCodingData-Event, which is forwarded from the MQTT-Broker to kafka   \nThe MQTT topics define the interface between the coding system (Mail Match System incl. MCS) and SDDM\n"
   contact:
     name: gfellerle
-  version: 5.0.0-feature-coding-instruction-transfer-label.1
+  version: 5.0.0-feature-coding-instruction-transfer-label.2
 host: 'server:8080'
 basePath: 'Kafka, MQTT'
 paths:
@@ -213,8 +213,7 @@ definitions:
     enum:
       - ADDRESS_CODING
       - SERVICE_CODING
-      - TRANSFER_CODING
-    description: "ADDRESS_CODING   The coding system needs to trigger an address coding workflow (including barcode coding)\nSERVICE_CODING   The coding system needs to trigger a service coding workflow\nTRANSFER_CODING  The coding system needs to trigger a transfer label coding workflow"
+    description: "ADDRESS_CODING   The coding system needs to trigger an address coding workflow (including barcode coding)\nSERVICE_CODING   The coding system needs to trigger a service coding workflow"
   CodingReason:
     type: string
     enum:
