@@ -4,7 +4,7 @@ info:
   description: "API definitions for Coding Data\nThe Kafka topic exposes the FinalCodingData-Event, which is forwarded from the MQTT-Broker to kafka   \nThe MQTT topics define the interface between the coding system (Mail Match System incl. MCS) and SDDM\n"
   contact:
     name: gfellerle
-  version: 5.0.0-feature-coding-instruction-transfer-label.2
+  version: 5.0.0-feature-coding-instruction-transfer-label.3
 host: 'server:8080'
 basePath: 'Kafka, MQTT'
 paths:
@@ -127,7 +127,7 @@ definitions:
       - FORWARD_TO_POST_OFFICE
       - FORWARD_TO_PICK_POST
       - FORWARD_TO_MY_POST_24
-    description: "FORWARD_TO_DOMICILE = forward to domicile\nFORWARD_TO_POBOX = forward to pobox\nFORWARD_TO_POST_OFFICE = forward to postoffice\nFORWARD_TO_PICK_POST = forward to pickpost\nFORWARD_TO_MY_POST_24 = forward to mypost24"
+    description: "FORWARD_TO_DOMICILE = forward to domicile\nFORWARD_TO_POBOX = forward to pobox\nFORWARD_TO_POST_OFFICE = forward to postoffice\nFORWARD_TO_PICK_POST = forward to pickpost\nFORWARD_TO_MY_POST_24 = forward to MyPost24"
   Address:
     type: object
     properties:
@@ -830,10 +830,10 @@ definitions:
         description: 'Salutation of the addressee'
       firstName:
         type: string
-        description: 'Firstname of the addressee'
+        description: 'First name of the addressee'
       lastName:
         type: string
-        description: 'Lastname of the addressee'
+        description: 'Last name of the addressee'
       additionalAddressLine:
         type: string
         description: 'Additional address line of the addressee'
@@ -845,7 +845,7 @@ definitions:
         description: 'Street of the address'
       houseNumber:
         type: string
-        description: 'Housenumber of the address'
+        description: 'HouseNumber of the address'
       pobox:
         type: string
         description: 'Post office box'
@@ -860,16 +860,10 @@ definitions:
         description: 'PersonAddressKey of the service address'
       houseKey:
         type: string
-        description: 'Housekey of the address'
+        description: 'HouseKey of the address'
       streetKey:
         type: string
-        description: 'Streetkey of the address'
-    required:
-      - type
-      - firstName
-      - lastName
-      - street
-      - postcode
+        description: 'StreetKey of the address'
     additionalProperties: false
     description: 'The service address contains the address data that is stored in the service order'
   ServiceCodingEnriched:
@@ -919,7 +913,7 @@ definitions:
       - MILITARY
       - MANUAL_ORDER
       - SENDER_SINGLE_ORDER
-    description: "SINGLE_ORDER = order for a specific mailpiece (Empfänger-Einzelauftrag)\nPERMANENT_ORDER = order for personaddresskey (Empfänger-Dauerauftrag)\nTRANSFER_LABEL = order for a transfer label case\nMILITARY = order for a military address\nMANUAL_ORDER = order created at a manual coding station\nSENDER_SINGLE_ORDER = order for a specific mailpiece created by the sender"
+    description: "SINGLE_ORDER = order for a specific mailpiece (Empfänger-Einzelauftrag)\nPERMANENT_ORDER = order for personAddressKey (Empfänger-Dauerauftrag)\nTRANSFER_LABEL = order for a transfer label case\nMILITARY = order for a military address\nMANUAL_ORDER = order created at a manual coding station\nSENDER_SINGLE_ORDER = order for a specific mailpiece created by the sender"
   ServiceOrder:
     type: object
     properties:
@@ -928,7 +922,7 @@ definitions:
         description: 'Id of the service order from the source system'
       serviceOrderType:
         $ref: 'ServiceOrderType'
-        description: 'Type of the service order. Indicates if it''s an order for a single mailpiece or if it''s an order for an address (personaddresskey)'
+        description: 'Type of the service order. Indicates if it''s an order for a single mailpiece or if it''s an order for an address (personAddressKey)'
       serviceType:
         $ref: 'ServiceType'
         description: 'Type of the service. The type is needed to choose the right address label type.'
@@ -937,7 +931,7 @@ definitions:
         description: 'The new recipient address'
       chargingOption:
         $ref: 'ChargingType'
-        description: 'Indicates if the service is chargeable or not. If it''s chargable the field taxInformation contains the tax to be printed on the address label.'
+        description: 'Indicates if the service is chargeable or not. If it''s chargeable the field taxInformation contains the tax to be printed on the address label.'
       taxInformation:
         $ref: 'TaxInformation'
         description: 'The tax information for the service. If a franking value is available, this information has to be printed on the address label.'
@@ -957,11 +951,10 @@ definitions:
         description: 'Date that needs to be printed on the label in the retain case'
       deliveryLanguage:
         $ref: 'Language'
-        description: 'Language of the distibution office that delivers the mailpiece to the service address. Used to print the address in the correct language.'
+        description: 'Language of the distribution office that delivers the mailpiece to the service address. Used to print the address in the correct language.'
     required:
       - serviceOrderId
       - serviceOrderType
-      - serviceType
       - chargingOption
       - deliveryLanguage
     additionalProperties: false
@@ -976,7 +969,7 @@ definitions:
       - DELAYED_PICKUP
       - DELAYED_DELIVERY
       - INTERNATIONAL
-    description: "FORWARD = forward mailpiece to another address\nFORWARD_POBOX = forward mailpiece from a postbox to a domicile address\nDELIVERY_SLOT = deliver mailpiece on a specific weekday / at a specific time window\nRETURN = the mailpiece has to returned to the sender\nDELAYED_PICKUP = the mailpiece has to retaind at the postoffice for a specific time. After this time it must be picked up by the reciever.\nDELAYED_DELIVERY = the mailpiece has to retaind at the postoffice for a specific time. After this time it must be delivered to the receiver.\nINTERNATIONAL = the mailpiece must be directed an export office"
+    description: "FORWARD = forward mailpiece to another address\nFORWARD_POBOX = forward mailpiece from a postbox to a domicile address\nDELIVERY_SLOT = deliver mailpiece on a specific weekday / at a specific time window\nRETURN = the mailpiece has to returned to the sender\nDELAYED_PICKUP = the mailpiece has to retained at the postoffice for a specific time. After this time it must be picked up by the receiver.\nDELAYED_DELIVERY = the mailpiece has to retained at the postoffice for a specific time. After this time it must be delivered to the receiver.\nINTERNATIONAL = the mailpiece must be directed an export office"
   SourceSystem:
     type: object
     properties:
