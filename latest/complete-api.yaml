@@ -4,7 +4,7 @@ info:
   description: "API definitions for Coding Data\nThe Kafka topic exposes the FinalCodingData-Event, which is forwarded from the MQTT-Broker to kafka   \nThe MQTT topics define the interface between the coding system (Mail Match System incl. MCS) and SDDM\n"
   contact:
     name: gfellerle
-  version: 4.2.0
+  version: 4.3.0-feature-fixes.2
 host: 'server:8080'
 basePath: 'Kafka, MQTT'
 paths:
@@ -127,7 +127,13 @@ definitions:
       - FORWARD_TO_POST_OFFICE
       - FORWARD_TO_PICK_POST
       - FORWARD_TO_MY_POST_24
-    description: "FORWARD_TO_DOMICILE = forward to domicile\nFORWARD_TO_POBOX = forward to pobox\nFORWARD_TO_POST_OFFICE = forward to postoffice\nFORWARD_TO_PICK_POST = forward to pickpost\nFORWARD_TO_MY_POST_24 = forward to mypost24"
+      - DOMICILE
+      - POBOX
+      - POST_OFFICE
+      - PICK_POST
+      - MY_POST_24
+      - MILITARY
+    description: "ACTION: The enum Values with FORWARD_TO are deprecated and will be removed in the next version.\n\nDOMICILE = forward to domicile\nPOBOX = forward to pobox\nPOST_OFFICE = forward to postoffice\nPICK_POST = forward to pickpost\nMY_POST_24 = forward to MyPost24\nMILITARY = forward to military address"
   Address:
     type: object
     properties:
@@ -307,7 +313,8 @@ definitions:
       - COMPANY_POSTCODE
       - INTERNATIONAL_MAILPIECE
       - MILITARY
-    description: "NONE = no service\nDOMICILE = Domiziladresse\nPICK_POST = Pickpost\nMY_POST_24 = myPost24\nPO_BOX = Post Office Box (Postfach)\nPOSTE_RESTANTE = Retain at swiss post (Postlagernd)\nCOMPANY_POSTCODE = Company Postcode indicates (FirmenPLZ)\nINTERNATIONAL_PARCEL = International address (Import / Export)\nMILITARY = Military address"
+      - INTERNAL_POSTCODE
+    description: "NONE = no service\nDOMICILE = Domiziladresse\nPICK_POST = Pickpost\nMY_POST_24 = myPost24\nPO_BOX = Post Office Box (Postfach)\nPOSTE_RESTANTE = Retain at swiss post (Postlagernd)\nCOMPANY_POSTCODE = Company Postcode indicates (FirmenPLZ)\nINTERNATIONAL_PARCEL = International address (Import / Export)\nMILITARY = Military address\nINTERNAL_POSTCODE = For internal swiss post use only"
   DeliveryPoint:
     type: object
     properties:
@@ -770,13 +777,25 @@ definitions:
       shortName:
         type: string
         description: 'Shortname of validated product (e.g. PRI)'
+      source:
+        $ref: 'ProductSource'
+        description: "Describes where the product information came from. Beware that the value of this\nfield can change with each coding for the same mailpiece.\nEg.: PREANNOUNCEMENT -> MAILPIECE -> PREKNOWLEDGE"
       sourceSystem:
         $ref: 'SourceSystem'
-        description: "Source system which captured the product\nPossible sources:\nPREANNOUNCEMENT Coding data delivered by a preannouncement from customer\nAUTOMATIC_CODING\tAutomatic coding system using optical character recognition\nMANUAL_CODING_REJECT\tManual coding station\nMANUAL_CODING_LIGHT\tManual coding by a a portable scanner\nMANUAL_CODING_BULK\tManual bulk coding station"
+        description: 'Source system which captured the product'
     required:
       - code
+      - source
     additionalProperties: false
     description: 'Identified and validated product (old PRZL, "Zusatzleistung")'
+  ProductSource:
+    type: string
+    enum:
+      - MAILPIECE
+      - MANUAL
+      - PREANNOUNCEMENT
+      - PREKNOWLEDGE
+    description: "Specifies where this product code was read from.\n\nMAILPIECE: The product was read directly from the mailpeice (eg. by OCR).\nMANUAL: The product was added manually by a coder.\nPREANNOUNCEMENT: The product was provided (preannounced) by the customer.\nPREKNOWLEDGE: The product was detected in a earlier coding process and reused from there."
   Product:
     type: object
     properties:
@@ -786,8 +805,12 @@ definitions:
       shortName:
         type: string
         description: 'Shortname of validated product (e.g. PRI)'
+      source:
+        $ref: 'ProductSource'
+        description: "Describes where the product information came from. Beware that the value of this\nfiled can change with each coding for the same mailpiece.\nEg.: PREANNOUNCEMENT -> MAILPIECE -> PREKNOWLEDGE"
     required:
       - code
+      - source
     additionalProperties: false
     description: 'Identified and validated product (old PRZL, "Zusatzleistung")'
   ReturnReasonType:
@@ -830,10 +853,10 @@ definitions:
         description: 'Salutation of the addressee'
       firstName:
         type: string
-        description: 'Firstname of the addressee'
+        description: 'First name of the addressee'
       lastName:
         type: string
-        description: 'Lastname of the addressee'
+        description: 'Last name of the addressee'
       additionalAddressLine:
         type: string
         description: 'Additional address line of the addressee'
@@ -845,7 +868,7 @@ definitions:
         description: 'Street of the address'
       houseNumber:
         type: string
-        description: 'Housenumber of the address'
+        description: 'HouseNumber of the address'
       pobox:
         type: string
         description: 'Post office box'
@@ -860,16 +883,10 @@ definitions:
         description: 'PersonAddressKey of the service address'
       houseKey:
         type: string
-        description: 'Housekey of the address'
+        description: 'HouseKey of the address'
       streetKey:
         type: string
-        description: 'Streetkey of the address'
-    required:
-      - type
-      - firstName
-      - lastName
-      - street
-      - postcode
+        description: 'StreetKey of the address'
     additionalProperties: false
     description: 'The service address contains the address data that is stored in the service order'
   ServiceCodingEnriched:
@@ -919,7 +936,7 @@ definitions:
       - MILITARY
       - MANUAL_ORDER
       - SENDER_SINGLE_ORDER
-    description: "SINGLE_ORDER = order for a specific mailpiece (Empfänger-Einzelauftrag)\nPERMANENT_ORDER = order for personaddresskey (Empfänger-Dauerauftrag)\nTRANSFER_LABEL = order for a transfer label case\nMILITARY = order for a military address\nMANUAL_ORDER = order created at a manual coding station\nSENDER_SINGLE_ORDER = order for a specific mailpiece created by the sender"
+    description: "SINGLE_ORDER = order for a specific mailpiece (Empfänger-Einzelauftrag)\nPERMANENT_ORDER = order for personAddressKey (Empfänger-Dauerauftrag)\nTRANSFER_LABEL = order for a transfer label case\nMILITARY = order for a military address\nMANUAL_ORDER = order created at a manual coding station\nSENDER_SINGLE_ORDER = order for a specific mailpiece created by the sender"
   ServiceOrder:
     type: object
     properties:
@@ -928,7 +945,7 @@ definitions:
         description: 'Id of the service order from the source system'
       serviceOrderType:
         $ref: 'ServiceOrderType'
-        description: 'Type of the service order. Indicates if it''s an order for a single mailpiece or if it''s an order for an address (personaddresskey)'
+        description: 'Type of the service order. Indicates if it''s an order for a single mailpiece or if it''s an order for an address (personAddressKey)'
       serviceType:
         $ref: 'ServiceType'
         description: 'Type of the service. The type is needed to choose the right address label type.'
@@ -937,7 +954,7 @@ definitions:
         description: 'The new recipient address'
       chargingOption:
         $ref: 'ChargingType'
-        description: 'Indicates if the service is chargeable or not. If it''s chargable the field taxInformation contains the tax to be printed on the address label.'
+        description: 'Indicates if the service is chargeable or not. If it''s chargeable the field taxInformation contains the tax to be printed on the address label.'
       taxInformation:
         $ref: 'TaxInformation'
         description: 'The tax information for the service. If a franking value is available, this information has to be printed on the address label.'
@@ -957,11 +974,10 @@ definitions:
         description: 'Date that needs to be printed on the label in the retain case'
       deliveryLanguage:
         $ref: 'Language'
-        description: 'Language of the distibution office that delivers the mailpiece to the service address. Used to print the address in the correct language.'
+        description: 'Language of the distribution office that delivers the mailpiece to the service address. Used to print the address in the correct language.'
     required:
       - serviceOrderId
       - serviceOrderType
-      - serviceType
       - chargingOption
       - deliveryLanguage
     additionalProperties: false
@@ -976,7 +992,8 @@ definitions:
       - DELAYED_PICKUP
       - DELAYED_DELIVERY
       - INTERNATIONAL
-    description: "FORWARD = forward mailpiece to another address\nFORWARD_POBOX = forward mailpiece from a postbox to a domicile address\nDELIVERY_SLOT = deliver mailpiece on a specific weekday / at a specific time window\nRETURN = the mailpiece has to returned to the sender\nDELAYED_PICKUP = the mailpiece has to retaind at the postoffice for a specific time. After this time it must be picked up by the reciever.\nDELAYED_DELIVERY = the mailpiece has to retaind at the postoffice for a specific time. After this time it must be delivered to the receiver.\nINTERNATIONAL = the mailpiece must be directed an export office"
+      - MILITARY
+    description: "FORWARD = forward mailpiece to another address\nFORWARD_POBOX = forward mailpiece from a postbox to a domicile address\nDELIVERY_SLOT = deliver mailpiece on a specific weekday / at a specific time window\nRETURN = the mailpiece has to returned to the sender\nDELAYED_PICKUP = the mailpiece has to retained at the postoffice for a specific time. After this time it must be picked up by the receiver.\nDELAYED_DELIVERY = the mailpiece has to retained at the postoffice for a specific time. After this time it must be delivered to the receiver.\nINTERNATIONAL = the mailpiece must be directed an export office\nMILITARY = Military address"
   SourceSystem:
     type: object
     properties:
@@ -988,13 +1005,14 @@ definitions:
         description: 'Instance of the device'
       locationKey:
         type: string
-        description: 'Unique identifier of the sorting center (ONRP).'
+        description: 'Unique identifier of the sorting location.'
         maxLength: 200
     required:
       - systemName
       - instance
       - locationKey
     additionalProperties: false
+    description: "Describes which system provided the information. This is meant to be used for diagnositcs\nand should not be used to infer any business values. The given names can change without\nfurhter notice and are not to be considered stable."
   SubmitActionEvent:
     type: object
     properties:
@@ -1011,10 +1029,13 @@ definitions:
         description: 'Optional list of Ids that identifies a mailpiece in a specific context'
       timestamp:
         $ref: 'DateTime'
-        description: 'Time when the event occured'
+        description: 'Time when the event occurred'
       codingInstruction:
         $ref: 'CodingInstruction'
         description: 'The type of coding requested by sorting system'
+      discardPreknowledgeData:
+        type: boolean
+        description: "Instructs the coding system to discard all preknowledge and start coding as if there was no information\nfrom a previous coding or preannouncement for this mailpiece.\nACTION: Make required as soon as all systrems have updated to this version."
       codingDepth:
         $ref: 'CodingDepth'
         description: 'Required coding depth of the sorting system. Relevant in case of codingInstruction = ADDRESS_CODING'
@@ -1112,6 +1133,9 @@ definitions:
       timestamp:
         $ref: 'DateTime'
         description: 'Time when the event is published'
+      codingInstruction:
+        $ref: 'CodingInstruction'
+        description: "ACTION: Make required as soon as the coding system has updated to this version\nThe type of coding requested by sorting system"
       coding:
         $ref: 'Coding'
         description: "Data captured during a workflow in the coding system\nThis may contain aggregated data from multiple enrichment steps"
