@@ -4,7 +4,7 @@ info:
   description: "API definitions for Coding Data\nThe Kafka topic exposes the FinalCodingData-Event, which is forwarded from the MQTT-Broker to kafka   \nThe MQTT topics define the interface between the coding system (Mail Match System incl. MCS) and SDDM\n"
   contact:
     name: gfellerle
-  version: 4.3.0-feature-fixes.2
+  version: 4.3.0-feature-fixes.3
 host: 'server:8080'
 basePath: 'Kafka, MQTT'
 paths:
@@ -1035,7 +1035,7 @@ definitions:
         description: 'The type of coding requested by sorting system'
       discardPreknowledgeData:
         type: boolean
-        description: "Instructs the coding system to discard all preknowledge and start coding as if there was no information\nfrom a previous coding or preannouncement for this mailpiece.\nACTION: Make required as soon as all systrems have updated to this version."
+        description: "Instructs the coding system to discard all preknowledge and start coding as if there was no information\nfrom a previous coding or preannouncement for this mailpiece.\nACTION: Make required as soon as all systems have updated to this version."
       codingDepth:
         $ref: 'CodingDepth'
         description: 'Required coding depth of the sorting system. Relevant in case of codingInstruction = ADDRESS_CODING'
@@ -1135,7 +1135,7 @@ definitions:
         description: 'Time when the event is published'
       codingInstruction:
         $ref: 'CodingInstruction'
-        description: "ACTION: Make required as soon as the coding system has updated to this version\nThe type of coding requested by sorting system"
+        description: "ACTION: Make required as soon as the coding system has updated to this version\nThe type of coding requested by the sorting system"
       coding:
         $ref: 'Coding'
         description: "Data captured during a workflow in the coding system\nThis may contain aggregated data from multiple enrichment steps"
