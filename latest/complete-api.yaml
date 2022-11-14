@@ -4,7 +4,7 @@ info:
   description: "API definitions for Coding Data\nThe Kafka topic exposes the FinalCodingData-Event, which is forwarded from the MQTT-Broker to kafka   \nThe MQTT topics define the interface between the coding system (Mail Match System incl. MCS) and SDDM\n"
   contact:
     name: gfellerle
-  version: 5.0.0-feature-fixes.4
+  version: 5.0.0-feature-fixes.5
 host: 'server:8080'
 basePath: 'Kafka, MQTT'
 paths:
@@ -314,7 +314,7 @@ definitions:
       - INTERNATIONAL_MAILPIECE
       - MILITARY
       - INTERNAL_POSTCODE
-    description: "NONE = no service\nDOMICILE = Domiziladresse\nPICK_POST = Pickpost\nMY_POST_24 = myPost24\nPO_BOX = Post Office Box (Postfach)\nPOSTE_RESTANTE = Retain at swiss post (Postlagernd)\nCOMPANY_POSTCODE = Company Postcode indicates (FirmenPLZ)\nINTERNATIONAL_PARCEL = International address (Import / Export)\nMILITARY = Military address\nINTERNAL_POSTCODE = For internal swiss post use only"
+    description: "NONE = no service\nDOMICILE = Domiziladresse\nPICK_POST = Pickpost\nMY_POST_24 = myPost24\nPO_BOX = Post Office Box (Postfach)\nPOSTE_RESTANTE = Retain at swiss post (Postlagernd)\nCOMPANY_POSTCODE = Company Postcode indicates (FirmenPLZ)\nINTERNATIONAL_PARCEL = International address (Export)\nMILITARY = Military address\nINTERNAL_POSTCODE = Swiss post internal postcode"
   DeliveryPoint:
     type: object
     properties:
