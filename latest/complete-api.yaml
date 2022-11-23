@@ -4,7 +4,7 @@ info:
   description: "API definitions for Coding Data\nThe Kafka topic exposes the FinalCodingData-Event, which is forwarded from the MQTT-Broker to kafka   \nThe MQTT topics define the interface between the coding system (Mail Match System incl. MCS) and SDDM\n"
   contact:
     name: gfellerle
-  version: 5.1.0-feature-operator-coding-requests.1
+  version: 5.1.0-feature-operator-coding-requests.2
 host: 'server:8080'
 basePath: 'Kafka, MQTT'
 paths:
@@ -202,10 +202,10 @@ definitions:
           $ref: 'InformationCarrierEnriched'
         description: 'Information which were physically present on the parcel (e.g. barcodes)'
       serviceCoding:
-        $ref: 'ServiceApplication'
+        $ref: 'ServiceApplicationEnriched'
         description: "Contains service related information which is visible on a parcel\nACTION: DEPRECATED in favor of ServiceApplied since version 5.1"
       serviceApplied:
-        $ref: 'ServiceApplication'
+        $ref: 'ServiceApplicationEnriched'
         description: 'Contains service related information which is visible on a parcel'
       serviceRequested:
         $ref: 'ServiceRequest'
@@ -913,6 +913,25 @@ definitions:
         description: 'StreetKey of the address'
     additionalProperties: false
     description: 'The service address contains the address data that is stored in the service order'
+  ServiceApplicationEnriched:
+    type: object
+    properties:
+      serviceOrder:
+        $ref: 'ServiceOrder'
+        description: 'Service order that has been processed.'
+      manualForwardingType:
+        $ref: 'ManualForwardingType'
+        description: "Indicates how the parcel is handled manually.\nACTION: To be DELETED (DEPRECATED since version 5.1)"
+      returnReasonApplied:
+        $ref: 'ReturnReasonType'
+        description: "Indicates the reason of a returned mailpiece. Needed if Return reason is changed on MCS\nACTION: To be DELETED (DEPRECATED since version 5.1)"
+      processingState:
+        $ref: 'ProcessingStateType'
+        description: 'Indicates if the service order has been applied or not'
+    required:
+      - processingState
+    additionalProperties: false
+    description: 'The service coding indicates a service which is physically visible on a parcel. These services can be provided during automatic or manual processes (e.g. transfer label)'
   ServiceApplication:
     type: object
     properties:
