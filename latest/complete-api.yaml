@@ -4,7 +4,7 @@ info:
   description: "API definitions for Coding Data\nThe Kafka topic exposes the FinalCodingData-Event, which is forwarded from the MQTT-Broker to kafka   \nThe MQTT topics define the interface between the coding system (Mail Match System incl. MCS) and SDDM\n"
   contact:
     name: gfellerle
-  version: 5.1.0-feature-operator-coding-requests.2
+  version: 5.1.0-feature-operator-coding-requests.3
 host: 'server:8080'
 basePath: 'Kafka, MQTT'
 paths:
