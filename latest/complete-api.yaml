@@ -4,7 +4,7 @@ info:
   description: "API definitions for Coding Data\nThe Kafka topic exposes the FinalCodingData-Event, which is forwarded from the MQTT-Broker to kafka   \nThe MQTT topics define the interface between the coding system (Mail Match System incl. MCS) and SDDM\n"
   contact:
     name: gfellerle
-  version: 5.1.0-feature-operator-coding-requests.3
+  version: 5.1.0-feature-operator-coding-requests.4
 host: 'server:8080'
 basePath: 'Kafka, MQTT'
 paths:
@@ -943,10 +943,10 @@ definitions:
         description: 'Indicates how the parcel is handled manually.'
       returnReasonApplied:
         $ref: 'ReturnReasonType'
-        description: "Indicates the reason of a returned mailpiece. Needed if Return reason is changed on MCS\nACTION: to be DELETED (Deprecated since version:5)"
+        description: "Indicates the reason of a returned mailpiece. Needed if Return reason is changed on MCS\nACTION: to be DELETED (Deprecated since version:5.1)"
       processingState:
         $ref: 'ProcessingStateType'
-        description: 'Indicates if the service order has been applied or not'
+        description: "Indicates if the service order has been applied or not\nACTION: to be made MANDATORY (Defined MANDATORY since version:5.1)"
     additionalProperties: false
     description: 'The service coding indicates a service which is physically visible on a parcel. These services can be provided during automatic or manual processes (e.g. transfer label)'
   ServiceOrderType:
