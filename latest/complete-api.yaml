@@ -4,7 +4,7 @@ info:
   description: "API definitions for Coding Data\nThe Kafka topic exposes the FinalCodingData-Event, which is forwarded from the MQTT-Broker to kafka   \nThe MQTT topics define the interface between the coding system (Mail Match System incl. MCS) and SDDM\n"
   contact:
     name: gfellerle
-  version: 5.1.0-feature-operator-coding-requests.6
+  version: 5.1.0-feature-operator-coding-requests.7
 host: 'server:8080'
 basePath: 'Kafka, MQTT'
 paths:
@@ -923,9 +923,10 @@ definitions:
         $ref: 'ProcessingStateType'
         description: 'Indicates if the service order has been applied or not'
     required:
+      - serviceOrder
       - processingState
     additionalProperties: false
-    description: 'The service coding indicates a service which is physically visible on a parcel. These services can be provided during automatic or manual processes (e.g. transfer label)'
+    description: "The service application confirms that a service was applied or was cancelled (relevant for billing).\nIt is not supported to cancel the provided service coding and immediately apply a different service application,\ninstead a new service request has to be triggered."
   ServiceApplication:
     type: object
     properties:
@@ -936,9 +937,10 @@ definitions:
         $ref: 'ProcessingStateType'
         description: 'Indicates if the service order has been applied or not'
     required:
+      - serviceOrderId
       - processingState
     additionalProperties: false
-    description: 'The service coding indicates a service which is physically visible on a parcel. These services can be provided during automatic or manual processes (e.g. transfer label)'
+    description: "The service application confirms that a service was applied or was cancelled (relevant for billing).\nIt is not supported to cancel the provided service coding and immediately apply a different service application,\ninstead a new service request has to be triggered."
   ServiceCodingEnriched:
     type: object
     properties:
