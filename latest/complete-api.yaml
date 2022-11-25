@@ -4,7 +4,7 @@ info:
   description: "API definitions for Coding Data\nThe Kafka topic exposes the FinalCodingData-Event, which is forwarded from the MQTT-Broker to kafka   \nThe MQTT topics define the interface between the coding system (Mail Match System incl. MCS) and SDDM\n"
   contact:
     name: gfellerle
-  version: 5.1.0-feature-operator-coding-requests.7
+  version: 5.1.0-feature-operator-coding-requests.8
 host: 'server:8080'
 basePath: 'Kafka, MQTT'
 paths:
@@ -206,7 +206,7 @@ definitions:
         description: "Contains service related information which is visible on a parcel\nACTION: DEPRECATED in favor of ServiceApplied since version 5.1"
       serviceApplied:
         $ref: 'ServiceApplicationEnriched'
-        description: 'Contains service related information which is visible on a parcel'
+        description: 'Services applied during the coding.'
       serviceRequested:
         $ref: 'ServiceRequest'
         description: 'New services requested during the coding, to be applied in the sorting control system.'
