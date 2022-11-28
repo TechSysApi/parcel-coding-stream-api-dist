@@ -4,7 +4,7 @@ info:
   description: "API definitions for Coding Data\nThe Kafka topic exposes the FinalCodingData-Event, which is forwarded from the MQTT-Broker to kafka   \nThe MQTT topics define the interface between the coding system (Mail Match System incl. MCS) and SDDM\n"
   contact:
     name: gfellerle
-  version: 5.1.0-feature-operator-coding-requests.8
+  version: 5.1.0-feature-operator-coding-requests.9
 host: 'server:8080'
 basePath: 'Kafka, MQTT'
 paths:
@@ -671,7 +671,7 @@ definitions:
       - RETURN_SHIPMENT
       - MISCARRIAGE
       - AFTER_TREATMENT
-    description: "FORWARDING           = NachsendungNSP Wenn in einer späteren Phase zu einer RS-Adresse die NS-Abklärung durchgeführt wird und daraus eine NS würde, wird hier NS angegeben\r\nRETURN_SHIPMENT      = RuecksendungNSP Wenn aus der NS eine RS wurde, wird hier RS angegeben. Bsp. PPR (PostPac Promo): PPR werden nie nachgesendet. Infos zu DL sind für Nachforschungszwecke trotzdem ausgefüllt\r\nMISCARRIAGE          = FehlleitungNSP\r\nAFTER_TREATMENT      = Zur Nachbehandlung Informationen zur RS/NS (falls vorhanden) werden ausgefüllt. Der Verarbeitungsstatus wird auf OK gesetzt"
+    description: "FORWARDING           = NachsendungNSP Wenn in einer späteren Phase zu einer RS-Adresse die NS-Abklärung durchgeführt wird und daraus eine NS würde, wird hier NS angegeben\r\nRETURN_SHIPMENT      = RuecksendungNSP Wenn aus der NS eine RS wurde, wird hier RS angegeben. Bsp. PPR (PostPac Promo): PPR werden nie nachgesendet. Infos zu DL sind für Nachforschungszwecke trotzdem ausgefüllt\r\nMISCARRIAGE          = FehlleitungNSP\r\nAFTER_TREATMENT      = Zur Nachbehandlung Informationen zur RS/NS (falls vorhanden) werden ausgefüllt. Der Verarbeitungsstatus wird auf OK gesetzt\r\nACTION: deprecated to be DELETED (since version 5.1)"
   MasterDataKeys:
     type: object
     properties:
