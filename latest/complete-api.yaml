@@ -4,7 +4,7 @@ info:
   description: "API definitions for Coding Data\nThe Kafka topic exposes the FinalCodingData-Event, which is forwarded from the MQTT-Broker to kafka   \nThe MQTT topics define the interface between the coding system (Mail Match System incl. MCS) and SDDM\n"
   contact:
     name: gfellerle
-  version: 5.1.0-feature-operator-coding-requests.9
+  version: 5.1.0-feature-operator-coding-requests.10
 host: 'server:8080'
 basePath: 'Kafka, MQTT'
 paths:
@@ -393,8 +393,9 @@ definitions:
       - MULTIPLE_MAILPIECES_RECOGNIZED
       - NO_MAILPIECE_RECOGNIZED
       - IMAGE_ERROR
+      - NONE
       - OTHER
-    description: "MULTIPLE_MAILPIECES_RECOGNIZED   More than one mailpiece detected on an image\nNO_MAILPIECE_RECOGNIZED  No mailpiece detected on the image\nIMAGE_ERROR Error in image (e.g. poor quality)\nOTHER    Other cases"
+    description: "MULTIPLE_MAILPIECES_RECOGNIZED   More than one mailpiece detected on an image\nNO_MAILPIECE_RECOGNIZED  No mailpiece detected on the image\nIMAGE_ERROR Error in image (e.g. poor quality)\nNONE No detection error\nOTHER Other cases"
   EnrichmentStep:
     type: object
     properties:
@@ -526,7 +527,7 @@ definitions:
         description: 'Indicates the ROIs found on the image'
       detectionError:
         $ref: 'DetectionError'
-        description: 'Indicates if there is an error regarding the image'
+        description: "Indicates if there is an error regarding the image\nACTION: will become mandatory (mandatory since version:5.1)"
       face:
         $ref: 'Face'
         description: 'Face of the parcel on which the image is located'
@@ -549,9 +550,6 @@ definitions:
       sourceSystem:
         $ref: 'SourceSystem'
         description: "Source of an information carrier\nPossible sources in this context are:\nPREANNOUNCEMENT_CODING Coding data delivered by a preannouncement from customer\nAUTOMATIC_CODING\tAutomatic coding system using optical character recognition\nMANUAL_CODING_REJECT\tManual coding station\nMANUAL_CODING_LIGHT\tManual coding by a a portable scanner\nMANUAL_CODING_BULK\tManual bulk coding station"
-      timestamp:
-        $ref: 'DateTime'
-        description: 'Timestamp when the information carrier is read from the parcel'
       coderId:
         type: string
         description: 'Identification of the coder which scanned or typed the information carrier'
