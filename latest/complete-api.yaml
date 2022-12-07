@@ -4,7 +4,7 @@ info:
   description: "API definitions for Coding Data\nThe Kafka topic exposes the FinalCodingData-Event, which is forwarded from the MQTT-Broker to kafka   \nThe MQTT topics define the interface between the coding system (Mail Match System incl. MCS) and SDDM\n"
   contact:
     name: gfellerle
-  version: 5.1.0
+  version: 5.2.0-feature-PZS-7895-sddm-transmit-mailpieceuniqueidenfier-to-mms.2
 host: 'server:8080'
 basePath: 'Kafka, MQTT'
 paths:
@@ -443,6 +443,10 @@ definitions:
         type: string
         description: 'Id to identify the mailpiece during a sorting process'
         maxLength: 32
+      mailpieceUniqueIdentifier:
+        type: string
+        description: "The unique identifier for a mailpiece\nACTION: Make required as soon as the coding system has updated to this version"
+        maxLength: 200
       idTags:
         $ref: 'IdentifierTags'
         description: 'Contains a list of ids identifying the processing item.'
@@ -1098,6 +1102,10 @@ definitions:
         type: string
         description: 'machine specific id to identify the mailpiece during a sorting process'
         maxLength: 32
+      mailpieceUniqueIdentifier:
+        type: string
+        description: "The unique identifier for a mailpiece\nACTION: Make required as soon as the coding system has updated to this version"
+        maxLength: 200
       idTags:
         $ref: 'IdentifierTags'
         description: 'Optional list of Ids that identifies a mailpiece in a specific context'
@@ -1201,6 +1209,10 @@ definitions:
         type: string
         description: 'Id to identify the mailpiece during a sorting process'
         maxLength: 32
+      mailpieceUniqueIdentifier:
+        type: string
+        description: "The unique identifier for a mailpiece\nACTION: Make required as soon as the coding system has updated to this version"
+        maxLength: 200
       idTags:
         $ref: 'IdentifierTags'
         description: 'Contains a list of ids identifying the processing item.'
