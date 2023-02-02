@@ -4,7 +4,7 @@ info:
   description: "API definitions for Coding Data\nThe Kafka topic exposes the FinalCodingData-Event, which is forwarded from the MQTT-Broker to kafka   \nThe MQTT topics define the interface between the coding system (Mail Match System incl. MCS) and SDDM\n"
   contact:
     name: gfellerle
-  version: 5.2.0
+  version: 5.3.0
 host: 'server:8080'
 basePath: 'Kafka, MQTT'
 paths:
@@ -152,6 +152,9 @@ definitions:
       masterDataKeys:
         $ref: 'MasterDataKeys'
         description: 'All validated keys related to the read address elements'
+      sourceSystem:
+        $ref: 'SourceSystem'
+        description: "ACTION: To be DELETED as soon as the coding system uses its own mqtt-messages\nOnly used by the coding system as a workaround to be able to publish this information in the kafka-topic.\nPossible sources in this context are:\nPREANNOUNCEMENT\nOCR_ADDRESS\nVCS_INTERNAL_ADDRESS\nVCS_EXTERNAL_ADDRESS\nOCR_RETRY_ADDRESS\nMANUAL_CODING_REJECT\nMANUAL_CODING_BULK\nMANUAL_CODING_BULK_AUTOMATIC"
     required:
       - personState
       - personalizedAddressState
@@ -572,6 +575,9 @@ definitions:
       value:
         type: string
         description: 'Value of an information carrier'
+      sourceSystem:
+        $ref: 'SourceSystem'
+        description: "ACTION: To be DELETED as soon as the coding system uses its own mqtt-messages\nOnly used by the coding system as a workaround to be able to publish this information in the kafka-topic.\nPossible sources in this context are:\nPREANNOUNCEMENT_CODING Coding data delivered by a preannouncement from customer\nAUTOMATIC_CODING\tAutomatic coding system using optical character recognition\nMANUAL_CODING_REJECT\tManual coding station\nMANUAL_CODING_LIGHT\tManual coding by a a portable scanner\nMANUAL_CODING_BULK\tManual bulk coding station"
     required:
       - symbology
       - value
@@ -834,6 +840,9 @@ definitions:
       source:
         $ref: 'ProductSource'
         description: "Describes where the product information came from. Beware that the value of this\nfiled can change with each coding for the same mailpiece.\nEg.: PREANNOUNCEMENT -> MAILPIECE -> PREKNOWLEDGE"
+      sourceSystem:
+        $ref: 'SourceSystem'
+        description: "ACTION: To be DELETED as soon as the coding system uses its own mqtt-messages\nOnly used by the coding system as a workaround to be able to publish this information in the kafka-topic.\nSource system which captured the product"
     required:
       - code
       - source
