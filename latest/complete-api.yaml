@@ -4,7 +4,7 @@ info:
   description: "API definitions for Coding Data\nThe Kafka topic exposes the FinalCodingData-Event, which is forwarded from the MQTT-Broker to kafka   \nThe MQTT topics define the interface between the coding system (Mail Match System incl. MCS) and SDDM\n"
   contact:
     name: gfellerle
-  version: 5.3.0
+  version: 5.4.0-feature-transfer-case-support.2
 host: 'server:8080'
 basePath: 'Kafka, MQTT'
 paths:
@@ -233,7 +233,8 @@ definitions:
     enum:
       - ADDRESS_CODING
       - SERVICE_CODING
-    description: "ADDRESS_CODING   The coding system needs to trigger an address coding workflow (including barcode coding)\nSERVICE_CODING   The coding system needs to trigger a service coding workflow"
+      - TRANSFERCASE_CODING
+    description: "ADDRESS_CODING           The coding system needs to trigger an address coding workflow (including barcode coding)\nSERVICE_CODING           The coding system needs to trigger a service coding workflow\nTRANSFERCASE_CODING      The coding system needs to trigger a coding to determine the TransferCase (forward/return)"
   CodingReason:
     type: string
     enum:
@@ -922,6 +923,11 @@ definitions:
       streetKey:
         type: string
         description: 'StreetKey of the address'
+      changeable:
+        type: boolean
+        description: "Flag if the service address might be overriden by the coding system (default: false).\nIn case of a return transfer case, the return address might be defined by the sender company and\nmust be respected."
+    required:
+      - changeable
     additionalProperties: false
     description: 'The service address contains the address data that is stored in the service order'
   ServiceApplicationEnriched:
