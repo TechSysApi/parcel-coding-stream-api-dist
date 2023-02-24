@@ -4,20 +4,10 @@ info:
   description: "API definitions for Coding Data\nThe Kafka topic exposes the FinalCodingData-Event, which is forwarded from the MQTT-Broker to kafka   \nThe MQTT topics define the interface between the coding system (Mail Match System incl. MCS) and SDDM\n"
   contact:
     name: gfellerle
-  version: 5.3.0
+  version: 5.3.0-feature-refactoring.1
 host: 'server:8080'
-basePath: 'Kafka, MQTT'
+basePath: MQTT
 paths:
-  logistics.parcel.coding.final.Mailpiece-event:
-    get:
-      summary: 'Kafka topic for sending enriched coding data'
-      description: 'All the related coding data of a specific coding workflow (e.g. OCR Addresscoding, VCS-coding, ...)'
-      tags:
-        - Kafka
-      responses:
-        '200':
-          description: 'Final coding data for other peripheral systems'
-          schema: {type: array, $ref: 'FinalCodingEvent'}
   '/{locationKey}/rc-ic/v1/coding/transmit-final-result/{srcSystem}/{srcInstance}':
     post:
       summary: 'MQTT topic for sending coding data to the sorting system'
@@ -73,52 +63,6 @@ paths:
         default:
           schema: {$ref: 'SubmitActionEvent'}
 definitions:
-  Int:
-    type: integer
-    description: '<a href="https://swagger.io/docs/specification/data-models/data-types/#numbers">Number @asType integer</a>'
-  AddressEnriched:
-    type: object
-    properties:
-      person:
-        $ref: 'Person'
-        description: 'Information regarding a person'
-      additionalAddressLine1:
-        type: string
-        description: "Personalized and additional address information (e.g.c/o-Adresse)\n(AMPplus: Adresszusatz 1)"
-        maxLength: 65
-      additionalAddressLine2:
-        type: string
-        description: "Unpersonalized and not official information (e.g. Chalet Alpenblick)\n(AMPplus: Adresszusatz 2)"
-        maxLength: 65
-      locality:
-        $ref: 'Locality'
-        description: 'Locality of an address'
-      deliveryPointInformation:
-        $ref: 'DeliveryPoint'
-        description: 'Delivery point of an address'
-      addressLines:
-        type: array
-        items:
-          type: string
-        description: 'Address lines (raw, unvalidated address data submitted by the customer)'
-      sourceSystem:
-        $ref: 'SourceSystem'
-        description: "Source of the address\nPossible sources in this context are:\nPREANNOUNCEMENT\nOCR_ADDRESS\nVCS_INTERNAL_ADDRESS\nVCS_EXTERNAL_ADDRESS\nOCR_RETRY_ADDRESS\nMANUAL_CODING_REJECT\nMANUAL_CODING_BULK\nMANUAL_CODING_BULK_AUTOMATIC"
-      coderId:
-        type: string
-        description: 'Identification of the coder which typed the address'
-        maxLength: 50
-      masterDataKeys:
-        $ref: 'MasterDataKeys'
-        description: 'All validated keys related to the read address elements'
-      state:
-        $ref: 'PersonalizedAddressState'
-        description: 'Indicates state of a validated person living at a specific address'
-    required:
-      - sourceSystem
-      - masterDataKeys
-    additionalProperties: false
-    description: 'Address captured by an enrichment device or delivered by a preannouncement system'
   AddressType:
     type: string
     enum:
@@ -134,6 +78,9 @@ definitions:
       - MY_POST_24
       - MILITARY
     description: "ACTION: The enum Values with FORWARD_TO are deprecated and will be removed in the next version.\n\nDOMICILE = forward to domicile\nPOBOX = forward to pobox\nPOST_OFFICE = forward to postoffice\nPICK_POST = forward to pickpost\nMY_POST_24 = forward to MyPost24\nMILITARY = forward to military address"
+  Int:
+    type: integer
+    description: '<a href="https://swagger.io/docs/specification/data-models/data-types/#numbers">Number @asType integer</a>'
   Address:
     type: object
     properties:
@@ -179,61 +126,13 @@ definitions:
       - DELIVERY_POINT
       - RECEIVER
     description: "ADAPTIVE = Coding as deep as needed (default)\nCOUNTRY = Only Country information is relevant for Sorting\nPOSTCODE = Only Postcode information is relevant for Sorting\nDELIVERY_POINT = Only DeliveryPoint is relevant for Sorting\nRECEIVER = Receiver is needed for Sorting"
-  DateTime:
-    type: string
-    description: "<a href=\"https://swagger.io/docs/specification/data-models/data-types/#string\">String @format date-time</a>,\nas defined by <a href=\"https://tools.ietf.org/html/rfc3339#section-5.6\">RFC 3339, section 5.6</a>,\nfor example: <code>2014-05-22T10:42:42.542+00:00</code>."
-    format: date-time
-  CodingEnriched:
-    type: object
-    properties:
-      address:
-        $ref: 'AddressEnriched'
-        description: "Contains information regarding the address located on a mailpiece or transfered by a preannouncement system\nACTION: To be DELETED in favor of addresses (DEPRECATED since version 5.1)"
-      addresses:
-        type: array
-        items:
-          $ref: 'AddressEnriched'
-        description: 'Contains information regarding the address located on a mailpiece or transfered by a preannouncement system'
-      products:
-        type: array
-        items:
-          $ref: 'ProductEnriched'
-        description: 'Contains validated products, physically located on a mailpiece or transfered by a preannouncement system'
-      informationCarriers:
-        type: array
-        items:
-          $ref: 'InformationCarrierEnriched'
-        description: 'Information which were physically present on the parcel (e.g. barcodes)'
-      serviceCoding:
-        $ref: 'ServiceCodingEnriched'
-        description: "Contains service related information which is visible on a parcel\nACTION: DEPRECATED in favor of ServiceApplied since version 5.1"
-      serviceApplied:
-        $ref: 'ServiceApplicationEnriched'
-        description: 'Services applied during the coding.'
-      serviceRequested:
-        $ref: 'ServiceRequest'
-        description: 'New services requested during the coding, to be applied in the sorting control system.'
-      sourceSystem:
-        $ref: 'SourceSystem'
-        description: 'The system which publishes the event'
-      images:
-        type: array
-        items:
-          $ref: 'Image'
-        description: 'The images captured during coding'
-      workflowInformation:
-        $ref: 'WorkflowInformationEnriched'
-        description: 'Detailed insights in the internal workflow steps which occured to deliver the information in this event'
-    required:
-      - sourceSystem
-    additionalProperties: false
-    description: 'Information captured by the coding systems during coding'
   CodingInstruction:
     type: string
     enum:
       - ADDRESS_CODING
       - SERVICE_CODING
-    description: "ADDRESS_CODING   The coding system needs to trigger an address coding workflow (including barcode coding)\nSERVICE_CODING   The coding system needs to trigger a service coding workflow"
+      - TRANSFER_CODING
+    description: "ADDRESS_CODING   The coding system needs to trigger an address coding workflow (including barcode coding)\nSERVICE_CODING   The coding system needs to trigger a service coding workflow\nSERVICE_CODING   The coding system needs to trigger a transfer coding workflow"
   CodingReason:
     type: string
     enum:
@@ -384,88 +283,6 @@ definitions:
         description: 'Time window when the mailpiece should be delivered. Only available in case of serviceType = DELIVERY_SLOT'
     additionalProperties: false
     description: 'Information about the desired delivery day and time of the customer'
-  DetectedElements:
-    type: string
-    enum:
-      - ADDRESS_ROI
-      - BARCODE_ROI
-    description: "ADDRESS_ROI  This image contains address ROIs\nBARCODE_ROI  This image contains barcode ROIs"
-  DetectionError:
-    type: string
-    enum:
-      - MULTIPLE_MAILPIECES_RECOGNIZED
-      - NO_MAILPIECE_RECOGNIZED
-      - IMAGE_ERROR
-      - NONE
-      - OTHER
-    description: "MULTIPLE_MAILPIECES_RECOGNIZED   More than one mailpiece detected on an image\nNO_MAILPIECE_RECOGNIZED  No mailpiece detected on the image\nIMAGE_ERROR Error in image (e.g. poor quality)\nNONE No detection error\nOTHER Other cases"
-  EnrichmentStep:
-    type: object
-    properties:
-      eventId:
-        type: string
-        description: 'Internal id of the specific internal enrichment workflow'
-      order:
-        $ref: 'Int'
-        description: 'Order of the enrichment'
-      type:
-        $ref: 'SystemTypeCoding'
-        description: 'Type of the sytem which processed the enrichment'
-      timestampBegin:
-        $ref: 'DateTime'
-        description: 'Start time of the enrichment workflow'
-      timestampEnd:
-        $ref: 'DateTime'
-        description: 'End time of the enrichment workflow'
-    required:
-      - eventId
-      - timestampBegin
-      - timestampEnd
-    additionalProperties: false
-  Face:
-    type: string
-    enum:
-      - TOP
-      - LEFT
-      - RIGHT
-      - FRONT
-      - REAR
-      - BOTTOM
-      - FRONT_LEFT
-      - FRONT_RIGHT
-      - REAR_LEFT
-      - REAR_RIGHT
-  FinalCodingEvent:
-    type: object
-    properties:
-      codingId:
-        type: string
-        description: "Unique identifier of a coding message\nPrimary key 🔑"
-        maxLength: 200
-      processingItemId:
-        type: string
-        description: 'Id to identify the mailpiece during a sorting process'
-        maxLength: 32
-      mailpieceUniqueIdentifier:
-        type: string
-        description: "The unique identifier for a mailpiece\nACTION: Make required as soon as the coding system has updated to this version"
-        maxLength: 200
-      idTags:
-        $ref: 'IdentifierTags'
-        description: 'Contains a list of ids identifying the processing item.'
-      timestamp:
-        $ref: 'DateTime'
-        description: 'Time when the event is published'
-      coding:
-        $ref: 'CodingEnriched'
-        description: "Data captured during a workflow in the coding system\nThis may contain aggregated data from multiple enrichment steps"
-    required:
-      - codingId
-      - processingItemId
-      - timestamp
-      - coding
-    additionalProperties: false
-    description: 'Coding event'
   IdentifierTags:
     type: object
     properties:
@@ -514,58 +331,6 @@ definitions:
         maxLength: 200
     additionalProperties: false
     description: 'Contains a list of logistic or technical identifiers to track a mail item within a specific context.'
-  Image:
-    type: object
-    properties:
-      key:
-        type: string
-        description: 'Key assigned to an image'
-        maxLength: 200
-      sourceSystem:
-        $ref: 'SourceSystem'
-        description: 'System / device which captured image (or ROI image)'
-      mainFace:
-        type: boolean
-        description: 'Indicates the main image'
-      detectedElements:
-        type: array
-        items:
-          $ref: 'DetectedElements'
-        description: 'Indicates the ROIs found on the image'
-      detectionError:
-        $ref: 'DetectionError'
-        description: "Indicates if there is an error regarding the image\nACTION: will become mandatory (mandatory since version:5.1)"
-      face:
-        $ref: 'Face'
-        description: 'Face of the parcel on which the image is located'
-    required:
-      - key
-      - sourceSystem
-      - mainFace
-      - face
-    additionalProperties: false
-    description: 'Image information used by coding system'
-  InformationCarrierEnriched:
-    type: object
-    properties:
-      symbology:
-        $ref: 'Symbology'
-        description: 'Symbology of an information carrier'
-      value:
-        type: string
-        description: 'Value of an information carrier'
-      sourceSystem:
-        $ref: 'SourceSystem'
-        description: "Source of an information carrier\nPossible sources in this context are:\nPREANNOUNCEMENT_CODING Coding data delivered by a preannouncement from customer\nAUTOMATIC_CODING\tAutomatic coding system using optical character recognition\nMANUAL_CODING_REJECT\tManual coding station\nMANUAL_CODING_LIGHT\tManual coding by a a portable scanner\nMANUAL_CODING_BULK\tManual bulk coding station"
-      coderId:
-        type: string
-        description: 'Identification of the coder which scanned or typed the information carrier'
-        maxLength: 50
-    required:
-      - symbology
-      - value
-    additionalProperties: false
-    description: 'Identified and captured information carrier (e.g. barcodes, logos)'
   InformationCarrier:
     type: object
     properties:
@@ -647,31 +412,6 @@ definitions:
       - POSTAL_ORGANISATIONAL_UNITS
       - SUBSIDIARIES
     description: "Rechtsform, wird nur bei Geschäftspersonen abgefüllt\nINVIVIDUAL = Einzelfirma\nSIMPLE_PARTNERSHIP = Einfache Gesellschaft\nGENERAL_PARTNERSHIP = Kollektivgesellschaft\nLIMETED_PARTNERSHIP = Kommanditgesellschaft\nPARTNERSHIP_LIMETED_BY_SHARES = Kommanditaktiengesellschaft\nAG_LTD_PUBLIC_LIMETED_COMPANY = Aktiengesellschaft/LTD\nGMBH_SARL_PRIVATE_LIMETED_COMPANY = GMBH/SARL\nCOOPERATIVE = Genossenschaft\nASSOCIATION = Verein\nFOUNDATION = Stiftung\nBRANCH_OF_FOREIGN_AG_LTD =\nBRANCH_OF_FOREIGN_SARL = Ausländische GMBH-Filiale;SARL\nFEDERAL_ADMINISTRATION = Verwaltung des Bundes\nCANTONAL_ADMINISTRATION = Verwaltung des Kantons\nDISTRICT_ADMINISTRATION = Verwaltung des Bezirks\nMUNICIPAL_ADMINISTRATION = Verwaltung der Gemeinde\nPUBLIC_ENTITY_ADMINISTRATION = öffentliche Körperschaft (Verw.)\nSTATE_RECOGNIZED_CHURCH = Staatlich anerkannte Kirche\nFOREIGN_LEGAL_FORM_BRANCH = Ausländische Rechtsform (Filiale)\nFOREIGN_COUNTRY_EMBASSY = Ausländischer Staat (Botschaft)\nINERNATIONAL_ORGANISZATION = Internationale Organisation\nFEDERAL_WORKS = Betriebe des Bundes\nCANTONAL_WORKS = Betriebe des Kantons\nDISTRICT_WORKS = Betriebe des Bezirks\nMUNICIPAL_WORKS = Betriebe der Gemeinde\nPUBLIC_ENTITY_WORKS = öffentliche Körperschaft (Betriebe)\nPOSTAL_ORGANISATIONAL_UNITS = Organisaitonseinheit der Post\nSUBSIDIARIES = Konzerngesellschaft der Post"
-  Locality:
-    type: object
-    properties:
-      streetName:
-        type: string
-        description: "Name of the streed (e.g. Musterstrasse)\n(AMPplus: Strassenbezeichnung)"
-        maxLength: 60
-      city:
-        type: string
-        description: "City\n(AMPplus: Ort)"
-        maxLength: 60
-      addressPostcode4:
-        type: string
-        description: "4 digit postcode\n(AMPplus: Postleitzahl)"
-        maxLength: 4
-      addressPostcodeExtension:
-        type: string
-        description: "Additional information related to a city\nmultiple purposes, see examples:\n56, 57 = Zoll, Import/Export\n60 = Briefzustellung\n61 = Postfach\n70 = Paketzustellung\n72 = Expresszustellung\n74 = Postautodienst\n75 = Kaserne"
-        maxLength: 2
-      countryCode:
-        type: string
-        description: 'ISO-Code of the country (2-digit)'
-        maxLength: 2
-    additionalProperties: false
-    description: 'Information related to the locality of an address'
   ManualForwardingType:
     type: string
     enum:
@@ -679,7 +419,7 @@ definitions:
       - RETURN_SHIPMENT
       - MISCARRIAGE
       - AFTER_TREATMENT
-    description: "FORWARDING           = NachsendungNSP Wenn in einer späteren Phase zu einer RS-Adresse die NS-Abklärung durchgeführt wird und daraus eine NS würde, wird hier NS angegeben\r\nRETURN_SHIPMENT      = RuecksendungNSP Wenn aus der NS eine RS wurde, wird hier RS angegeben. Bsp. PPR (PostPac Promo): PPR werden nie nachgesendet. Infos zu DL sind für Nachforschungszwecke trotzdem ausgefüllt\r\nMISCARRIAGE          = FehlleitungNSP\r\nAFTER_TREATMENT      = Zur Nachbehandlung Informationen zur RS/NS (falls vorhanden) werden ausgefüllt. Der Verarbeitungsstatus wird auf OK gesetzt\r\nACTION: deprecated to be DELETED (since version 5.1)"
+    description: "FORWARDING           = NachsendungNSP Wenn in einer späteren Phase zu einer RS-Adresse die NS-Abklärung durchgeführt wird und daraus eine NS würde, wird hier NS angegeben\nRETURN_SHIPMENT      = RuecksendungNSP Wenn aus der NS eine RS wurde, wird hier RS angegeben. Bsp. PPR (PostPac Promo): PPR werden nie nachgesendet. Infos zu DL sind für Nachforschungszwecke trotzdem ausgefüllt\nMISCARRIAGE          = FehlleitungNSP\nAFTER_TREATMENT      = Zur Nachbehandlung Informationen zur RS/NS (falls vorhanden) werden ausgefüllt. Der Verarbeitungsstatus wird auf OK gesetzt\nACTION: deprecated to be DELETED (since version 5.1)"
   MasterDataKeys:
     type: object
     properties:
@@ -799,27 +539,7 @@ definitions:
       - MANUAL_FORWARDING
       - APPLIED
       - CANCELLED
-    description: "OK                       = (DEPRECATED since version 5.1) Ok\r\nNO_FORWARDING            = (DEPRECATED since version 5.1) Keine NS/RS. Wenn der Codierer eine NS- oder RS-Behandlung abbricht und auf die Paketadresse codiert.\r\nMANUAL_FORWARDING        = (DEPRECATED since version 5.1) Manuelle Nachsendung (Kein NSA gefunden, aber auf Transferetikette hat Bote NS-Adresse ausgefüllt)\r\nAPPLIED                  = Requested service has been applied.\r\nCANCELLED                = Requested service has been cancelled."
-  ProductEnriched:
-    type: object
-    properties:
-      code:
-        type: string
-        description: 'Validated product code (e.g. 509)'
-      shortName:
-        type: string
-        description: 'Shortname of validated product (e.g. PRI)'
-      source:
-        $ref: 'ProductSource'
-        description: "Describes where the product information came from. Beware that the value of this\nfield can change with each coding for the same mailpiece.\nEg.: PREANNOUNCEMENT -> MAILPIECE -> PREKNOWLEDGE"
-      sourceSystem:
-        $ref: 'SourceSystem'
-        description: 'Source system which captured the product'
-    required:
-      - code
-      - source
-    additionalProperties: false
-    description: 'Identified and validated product (old PRZL, "Zusatzleistung")'
+    description: "OK                       = (DEPRECATED since version 5.1) Ok\nNO_FORWARDING            = (DEPRECATED since version 5.1) Keine NS/RS. Wenn der Codierer eine NS- oder RS-Behandlung abbricht und auf die Paketadresse codiert.\nMANUAL_FORWARDING        = (DEPRECATED since version 5.1) Manuelle Nachsendung (Kein NSA gefunden, aber auf Transferetikette hat Bote NS-Adresse ausgefüllt)\nAPPLIED                  = Requested service has been applied.\nCANCELLED                = Requested service has been cancelled."
   ProductSource:
     type: string
     enum:
@@ -873,7 +593,7 @@ definitions:
       - CUSTOMS_CLEARANCE
       - GENERAL_CARGO_ILLEGAL_ADDRESS
       - OVERSEA_MISSING_DOCUMENTS
-    description: "Reason why parcel is returned\r\nUNCLAIMED = 0 = Nicht abgeholt\r\nRELOCATED = 1 = Weggezogen, Nachsendefrist abgelaufen\r\nREFUSED = 2 = Annahme verweigert\r\nRECIPIENT_UNKNOWN = 3 = Unbekannt (Empfänger nicht ermittelbar)\r\nDECEASED = 4 = Gestorben\r\nCOMPANY_DELETED = 5 = Firma erloschen\r\nRECIPIENT_RETURNED = 6 = Retour gem. Anweisung Absender/Empf.\r\nDAMAGE = 7 = Beschädigung\r\nPOSTRESTANTE = 8 = Postlagernd\r\nMILITARY = 9 = im Militär\r\nOVERSEA = 10 = im Ausland\r\nOUTSIDE_CIRCLE = 11 = ausserhalb Betreibungskreis\r\nBOX_NO_LONGER_EMPTIED = 12 = HBK/PF wird nicht mehr geleert\r\nRETURN_BY_RECEIVER = 13 = Rücksendung durch Empfänger\r\nRETAIN = 14 = Auftrag Post zurückbehalten\r\nSUMMONS = 15 = Vorladung BU\r\nREMARK = 16 = Vermerk auf Sendung beachten\r\nINVALID_IDENTITY = 17 = Ungültiges/falsches Ausweisdokument\r\nMAILBOX_AND_OR_BELL_NOT_LABELLED = 18 = Briefkasten oder Klingel nicht angeschrieben\r\nCUSTOMS_CLEARANCE = 19 = Neu- oder Korrekturverzollung\r\nGENERAL_CARGO_ILLEGAL_ADDRESS //General cargo (Stückgut) cannot be delivered to the designated address (i.e. a PO box)\r\nOVERSEA_MISSING_DOCUMENTS = 21 = Exportpaket ohne gültige Frachtpapiere"
+    description: "Reason why parcel is returned\nUNCLAIMED = 0 = Nicht abgeholt\nRELOCATED = 1 = Weggezogen, Nachsendefrist abgelaufen\nREFUSED = 2 = Annahme verweigert\nRECIPIENT_UNKNOWN = 3 = Unbekannt (Empfänger nicht ermittelbar)\nDECEASED = 4 = Gestorben\nCOMPANY_DELETED = 5 = Firma erloschen\nRECIPIENT_RETURNED = 6 = Retour gem. Anweisung Absender/Empf.\nDAMAGE = 7 = Beschädigung\nPOSTRESTANTE = 8 = Postlagernd\nMILITARY = 9 = im Militär\nOVERSEA = 10 = im Ausland\nOUTSIDE_CIRCLE = 11 = ausserhalb Betreibungskreis\nBOX_NO_LONGER_EMPTIED = 12 = HBK/PF wird nicht mehr geleert\nRETURN_BY_RECEIVER = 13 = Rücksendung durch Empfänger\nRETAIN = 14 = Auftrag Post zurückbehalten\nSUMMONS = 15 = Vorladung BU\nREMARK = 16 = Vermerk auf Sendung beachten\nINVALID_IDENTITY = 17 = Ungültiges/falsches Ausweisdokument\nMAILBOX_AND_OR_BELL_NOT_LABELLED = 18 = Briefkasten oder Klingel nicht angeschrieben\nCUSTOMS_CLEARANCE = 19 = Neu- oder Korrekturverzollung\nGENERAL_CARGO_ILLEGAL_ADDRESS //General cargo (Stückgut) cannot be delivered to the designated address (i.e. a PO box)\nOVERSEA_MISSING_DOCUMENTS = 21 = Exportpaket ohne gültige Frachtpapiere"
   ServiceAddress:
     type: object
     properties:
@@ -924,20 +644,6 @@ definitions:
         description: 'StreetKey of the address'
     additionalProperties: false
     description: 'The service address contains the address data that is stored in the service order'
-  ServiceApplicationEnriched:
-    type: object
-    properties:
-      serviceOrder:
-        $ref: 'ServiceOrder'
-        description: 'Service order that has been processed.'
-      processingState:
-        $ref: 'ProcessingStateType'
-        description: 'Indicates if the service order has been applied or not'
-    required:
-      - serviceOrder
-      - processingState
-    additionalProperties: false
-    description: "The service application confirms that a service was applied or was cancelled (relevant for billing).\nIt is not supported to cancel the provided service coding and immediately apply a different service application,\ninstead a new service request has to be triggered."
   ServiceApplication:
     type: object
     properties:
@@ -952,25 +658,6 @@ definitions:
       - processingState
     additionalProperties: false
     description: "The service application confirms that a service was applied or was cancelled (relevant for billing).\nIt is not supported to cancel the provided service coding and immediately apply a different service application,\ninstead a new service request has to be triggered."
-  ServiceCodingEnriched:
-    type: object
-    properties:
-      serviceOrder:
-        $ref: 'ServiceOrder'
-        description: 'Service order that has been processed.'
-      manualForwardingType:
-        $ref: 'ManualForwardingType'
-        description: 'Indicates how the parcel is handled manually.'
-      returnReasonApplied:
-        $ref: 'ReturnReasonType'
-        description: 'Indicates the reason of a returned mailpiece. Needed if Return reason is changed on MCS'
-      processingState:
-        $ref: 'ProcessingStateType'
-        description: 'Indicates if the service order has been applied or not'
-    required:
-      - processingState
-    additionalProperties: false
-    description: "The service coding indicates a service which is physically visible on a parcel. These services can be provided during automatic or manual processes (e.g. transfer label)\r\nACTION: To be DELETED (DEPRECATED since version 5.1) in favor of service-application-enriched"
   ServiceCoding:
     type: object
     properties:
@@ -989,7 +676,7 @@ definitions:
     required:
       - processingState
     additionalProperties: false
-    description: "The service coding indicates a service which is physically visible on a parcel. These services can be provided during automatic or manual processes (e.g. transfer label)\r\nACTION: To be DELETED (DEPRECATED since version 5.1) in favor of service-application"
+    description: "The service coding indicates a service which is physically visible on a parcel. These services can be provided during automatic or manual processes (e.g. transfer label)\nACTION: To be DELETED (DEPRECATED since version 5.1) in favor of service-application"
   ServiceOrderType:
     type: string
     enum:
@@ -1000,6 +687,10 @@ definitions:
       - MANUAL_ORDER
       - SENDER_SINGLE_ORDER
     description: "SINGLE_ORDER = order for a specific mailpiece (Empfänger-Einzelauftrag)\nPERMANENT_ORDER = order for personAddressKey (Empfänger-Dauerauftrag)\nTRANSFER_LABEL = order for a transfer label case\nMILITARY = order for a military address\nMANUAL_ORDER = order created at a manual coding station\nSENDER_SINGLE_ORDER = order for a specific mailpiece created by the sender"
+  DateTime:
+    type: string
+    description: "<a href=\"https://swagger.io/docs/specification/data-models/data-types/#string\">String @format date-time</a>,\nas defined by <a href=\"https://tools.ietf.org/html/rfc3339#section-5.6\">RFC 3339, section 5.6</a>,\nfor example: <code>2014-05-22T10:42:42.542+00:00</code>."
+    format: date-time
   ServiceOrder:
     type: object
     properties:
@@ -1015,6 +706,9 @@ definitions:
       serviceAddress:
         $ref: 'ServiceAddress'
         description: 'The new recipient address'
+      changeableAddress:
+        type: boolean
+        description: 'Indicates whether the service address can be changed by the coding system. This applies to return addresses only. The information is based on the Frankierlizenz and passed on from there.'
       chargingOption:
         $ref: 'ChargingType'
         description: 'Indicates if the service is chargeable or not. If it''s chargeable the field taxInformation contains the tax to be printed on the address label.'
@@ -1051,7 +745,7 @@ definitions:
       - FORWARD
       - RETURN
       - UNKNOWN
-    description: "FORWARD: mailpiece should be forwarded to a different address\r\nRETURN: mailpiece should be returned to the initial sender\r\nUNKNOWN: (to be deprecated) old `Fehlleitung` Label, must be address coded at a manual coding station."
+    description: "FORWARD: mailpiece should be forwarded to a different address\nRETURN: mailpiece should be returned to the initial sender\nUNKNOWN: (to be deprecated) old `Fehlleitung` Label, must be address coded at a manual coding station."
   ServiceRequest:
     type: object
     properties:
@@ -1068,7 +762,7 @@ definitions:
       - serviceOrderId
       - serviceType
     additionalProperties: false
-    description: "Request from the Coding system to the sorting system to add additional services to the mailpiece.\r\nAn additional coding request can be expected after the service request property has been filled."
+    description: "Request from the Coding system to the sorting system to add additional services to the mailpiece.\nAn additional coding request can be expected after the service request property has been filled."
   ServiceType:
     type: string
     enum:
@@ -1163,31 +857,6 @@ definitions:
       - UPC_A
       - UPC_E
     description: "NOT_RECOGNIZED The symbology is not recognized\nADDON Barcode Zusatz zu EAN und UPC\nCODABAR Barcode Codabar\nCODE_39 Barcode 39\nCODE_93 Barcode 93\nCODE_128 Barcode 128\nDATA_MATRIX Data Matrix Code\nEAN_8 International Article Number\nEAN_13 International Article Number\nEAN_128 International Article Number\nI2OF5 Interleved 2 of 5 Code\nMAXI_CODE Barcode Maxicode\nPDF_417 Barcode PDF417\nQR QR Barcode\nUPC_A Barcode Universal Product Codes (Normalversion)\nUPC_E Barcode Universal Product Codes (Kurzvariante)"
-  SystemTypeCoding:
-    type: string
-    enum:
-      - IMAGE_PREPROCESSOR
-      - IMAGE_CONTROLLER
-      - PREANNOUNCEMENT
-      - OCR_ROI_DETECTION
-      - OCR_BARCODE
-      - OCR_ADDRESS
-      - VCS_INTERNAL_ROI
-      - VCS_INTERNAL_PLZ
-      - VCS_INTERNAL_ADDRESS
-      - VCS_EXTERNAL_ROI
-      - VCS_EXTERNAL_PLZ
-      - VCS_EXTERNAL_ADDRESS
-      - OCR_RETRY_BARCODE
-      - OCR_RETRY_ADDRESS
-      - MANUAL_CODING_REJECT
-      - MANUAL_CODING_LIGHT
-      - MANUAL_CODING_BULK
-      - MANUAL_CODING_BULK_AUTOMATIC
-      - MANUAL_CODING_FLAT_BUNDLE
-      - ADDRESS_VALIDATION_AUTOMATIC
-      - ADDRESS_VALIDATION_HUMAN_SUPPORT
-    description: "IMAGE_PREPROCESSOR Device which handles image formatting and converting\nIMAGE_CONTROLLER Device which is responsible for the internal enrichment workflow of the coding systems (PieceManager)\nPREANNOUNCEMENT  Device which validates and publishes preannouncement data (Preannouncement processor)\nOCR_ROI_DETECTION    Device which detects ROI elements on an image (e.g. recipient address, barcode, ...)\nOCR_BARCODE  Device which reads / captures barcodes on an image\nOCR_ADDRESS  Device which reads address elements on an image\nVCS_INTERNAL_ROI Device VCS Offshore: Task in the video coding system where the coder detects address ROI elements on an image\nVCS_INTERNAL_PLZ Device VCS Offshore: Task in the video coding system where the coder enters the postcode based on an address ROI image\nVCS_INTERNAL_ADDRESS Device VCS Offshore: Task in the video coding system where the coder enters the recipient address based on an address ROI image\nVCS_EXTERNAL_ROI Device VCS Offshore: Task in the video coding system where the coder detects address ROI elements on an image\nVCS_EXTERNAL_PLZ Device VCS Offshore: Task in the video coding system where the coder enters the postcode based on an address ROI image\nVCS_EXTERNAL_ADDRESS Device VCS Offshore: Task in the video coding system where the coder enters the recipient address based on an address ROI image\nOCR_RETRY_BARCODE    Device which reads / captures barcodes on an image in a following workflow (e.g. after VCS ROI or VCS PLZ)\nOCR_RETRY_ADDRESS    Device which reads address elements on an image in a following workflow (e.g. after VCS ROI or VCS PLZ)\nMANUAL_CODING_REJECT Device where a coder manually captures barcodes and enters address information\nMANUAL_CODING_LIGHT Device where barcodes barcodes, products and the weight is captured (manual or partially automated)\nMANUAL_CODING_BULK   Device where barcodes, weight and dimensions and address information for bulky goods are captured or entered (manual or partially automated)\nMANUAL_CODING_BULK_AUTOMATIC Device where a coder manually captures barcodes and other specific information for bulky goods\nMANUAL_CODING_FLAT_BUNDLE Device where a coder manually captures postcodes for flat bundles\nADDRESS_VALIDATION_AUTOMATIC Device which validates an address in an automated enrichment workflow step (e.g. ocr address)\nADDRESS_VALIDATION_HUMAN_SUPPORT Device which validates an address in an enrichment workflow where a human is involved - as a support of the coder (e.g. MCS or VCS)"
   TaxInformation:
     type: object
     properties:
@@ -1241,29 +910,6 @@ definitions:
       - coding
     additionalProperties: false
     description: 'transmit-final-result event'
-  WorkflowInformationEnriched:
-    type: object
-    properties:
-      enrichmentSteps:
-        type: array
-        items:
-          $ref: 'EnrichmentStep'
-        description: 'The enrichment which occured during a coding workflow'
-      nextEnrichmentStep:
-        $ref: 'EnrichmentStep'
-        description: 'Indicates the next possible internal enrichment workflow step'
-      maxImageBasedCodingReached:
-        type: boolean
-        description: 'Indicates if more image based coding is possible'
-      codingReason:
-        type: array
-        items:
-          $ref: 'CodingReason'
-        description: 'Coding reasons that may happen during coding. They can be discharged as special sorts by the sorting system.'
-    required:
-      - enrichmentSteps
-      - maxImageBasedCodingReached
-    additionalProperties: false
   WorkflowInformation:
     type: object
     properties:
