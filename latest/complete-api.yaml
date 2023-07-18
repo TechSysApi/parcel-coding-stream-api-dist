@@ -4,7 +4,7 @@ info:
   description: "API definitions for Coding Data\nThe Kafka topic exposes the FinalCodingData-Event, which is forwarded from the MQTT-Broker to kafka   \nThe MQTT topics define the interface between the coding system (Mail Match System incl. MCS) and SDDM\n"
   contact:
     name: gfellerle
-  version: 5.3.0
+  version: 5.4.0-feature-add-additionalAddressLine2.1
 host: 'server:8080'
 basePath: 'Kafka, MQTT'
 paths:
@@ -894,7 +894,10 @@ definitions:
         description: 'Last name of the addressee'
       additionalAddressLine:
         type: string
-        description: 'Additional address line of the addressee'
+        description: 'Personalized and additional address information (e.g.c/o-Adresse)'
+      additionalAddressLine2:
+        type: string
+        description: 'Unpersonalized and not official information (e.g. Chalet Alpenblick / addressAddOn)'
       customerNumber:
         type: string
         description: 'Pickpost or MyPost24 number. Only available if type is FORWARD_TO_PICK_POST or FORWARD_TO_MY_POST_24'
